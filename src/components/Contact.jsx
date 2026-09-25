@@ -54,7 +54,7 @@ export default function Contact() {
           onClick={(e) => copy(e, 'mail-2')}
           aria-label="复制电话"
         >
-          <span className="contact__mail-text"><Editable k="contact-mail-2" fallback="18317389976" /></span>
+          <span className="contact__mail-text"><Editable k="contact-mail-2" fallback="183 1738 9976" /></span>
           {copied === 'mail-2' && <span className="contact__copied">已复制</span>}
         </button>
       </div>

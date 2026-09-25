@@ -26,10 +26,10 @@ export default function About() {
         </div>
         <div className="about__p-info">
           <h2 className="about__name sq">
-            <Editable k="about-name" fallback="冯嵘" />
+            <Editable k="about-name" fallback="冯  嵘" />
           </h2>
           <p className="about__dob st" style={{ '--d': '90ms' }}>
-            <Editable k="about-dob" fallback="1996.8.27" />
+            <Editable k="about-dob" fallback="1 9 9 6 . 8 . 2 7" />
           </p>
           <p className="about__skill st" style={{ '--d': '160ms' }}>
             <Editable k="about-skill" fallback="擅长品牌设计、包装设计、字体设计" />
@@ -38,10 +38,10 @@ export default function About() {
             <Editable k="about-edu" fallback="2017年毕业于河南工业大学" />
           </p>
           <p className="about__edu-sub st" style={{ '--d': '300ms' }}>
-            <Editable k="about-edu2" fallback="本科 电脑艺术设计" />
+            <Editable k="about-edu2" fallback="本科  电脑艺术设计" />
           </p>
           <p className="about__c-years st" style={{ '--d': '370ms' }}>
-            <Editable k="about-career-years" fallback="2019年——2026年" />
+            <Editable k="about-career-years" fallback="2019年 至 2026年" />
           </p>
           <p className="about__c-role st" style={{ '--d': '430ms' }}>
             <Editable k="about-career-role" fallback="在千和智汇担任品牌设计师" />
@@ -52,7 +52,7 @@ export default function About() {
       {/* 合作品牌 LOGO 墙：位置预留，墙体后续添加 */}
       <section className="about__clients">
         <p className="about__clients-title st" style={{ '--d': '520ms' }}>
-          <Editable k="about-clients" fallback="曾担任以下合作品牌 主创设计师" />
+          <Editable k="about-clients" fallback="曾担任以下合作品牌  主创设计师" />
         </p>
         {/* 参考图版式：标题下方横线（LOGO 墙区域顶部） */}
         <div className="about__rule-bottom" aria-hidden="true" />
