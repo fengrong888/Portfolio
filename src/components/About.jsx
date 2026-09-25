@@ -22,7 +22,7 @@ export default function About() {
       <div className="about__rule-top" aria-hidden="true" />
       <section className="about__profile">
         <div className="about__portrait">
-          <img src="/portrait.jpg" alt="设计师肖像" />
+          <img src="./portrait.jpg" alt="设计师肖像" />
         </div>
         <div className="about__p-info">
           <h2 className="about__name sq">
@@ -57,7 +57,7 @@ export default function About() {
         {/* 参考图版式：标题下方横线（LOGO 墙区域顶部） */}
         <div className="about__rule-bottom" aria-hidden="true" />
         <div className="about__clients-wall">
-          <img src="/brand-wall.png" alt="合作品牌" />
+          <img src="./brand-wall.png" alt="合作品牌" />
         </div>
       </section>
     </main>
