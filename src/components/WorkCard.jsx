@@ -149,7 +149,7 @@ export default function WorkCard({ work, index }) {
         style={{ aspectRatio: work.ratio, rotateX, rotateY, scale }}
       >
         <div className="card__img-p">
-          <img className="card__img" ref={imgRef} src={work.img} alt={work.title} loading="lazy" />
+          <img className="card__img" ref={imgRef} src={work.img} alt={work.title}  />
         </div>
         <div className="card__fill" aria-hidden="true" ref={fillRef} />
         <div className="card__intro" ref={introRef}>
