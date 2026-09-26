@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { works } from '../data/works'
+import { useWorks } from '../lib/edits'
 import { observeIn, unobserveIn } from '../lib/motion'
 
 // 逐字上浮转金：把文字拆成单字，悬浮时依次弹跳并转金色
@@ -37,6 +37,7 @@ export default function WorkDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
 
+  const works = useWorks()
   const idx = works.findIndex((w) => String(w.id) === String(id))
   const work = idx >= 0 ? works[idx] : null
   const prev = works[(idx - 1 + works.length) % works.length]
@@ -71,6 +72,11 @@ export default function WorkDetail() {
 
   return (
     <main className="detail">
+      {work._new && shots.length === 0 && (
+        <div className="detail__empty" style={{ paddingTop: 'var(--nav-h)' }}>
+          该作品详情图片尚未提供——请在管理面板编辑后导出数据发回，或直接提供图片压缩包。
+        </div>
+      )}
       <header className="detail__bar">
         <Link to="/" className="detail__back mono"><LetterUp text="返回作品" /></Link>
         <div className="detail__nav">

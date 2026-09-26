@@ -8,6 +8,7 @@ import Contact from './components/Contact'
 import Footer from './components/Footer'
 import ClickSpark from './components/ClickSpark'
 import EditBar from './components/EditBar'
+import AdminPanel from './components/AdminPanel'
 import CursorDot from './components/CursorDot'
 
 function Shell() {
@@ -30,6 +31,7 @@ function Shell() {
       </Routes>
       {!isDetail && <Footer />}
       <EditBar />
+      <AdminPanel />
       <CursorDot />
     </>
   )

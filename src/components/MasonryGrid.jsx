@@ -1,7 +1,8 @@
-import { works } from '../data/works'
+import { useWorks } from '../lib/edits'
 import WorkCard from './WorkCard'
 
 export default function MasonryGrid() {
+  const works = useWorks()
   return (
     <div className="masonry">
       {works.map((work, i) => (
