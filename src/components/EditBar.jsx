@@ -1,29 +1,88 @@
-import { useEffect } from 'react'
-import { setEditing, useEditing } from '../lib/edits'
+import { useEffect, useState } from 'react'
+import { setEditing, useEditing, useAuthorized, checkPassword } from '../lib/edits'
 
-// 快捷键入口：Shift+E 直接打开 / 关闭「作品管理面板」。
-// 面板内可编辑作品标题/类别/英文、新增作品、导出数据发回固化部署。
+// 后台入口：Shift+E 唤起。需要输入后台密码，避免访客进入管理面板。
+// 同一浏览器会话内验证通过后免重复输入（关闭标签页失效）。
 export default function EditBar() {
   const editing = useEditing()
+  const authorized = useAuthorized()
+  const [askPw, setAskPw] = useState(false)
+  const [pw, setPw] = useState('')
+  const [wrong, setWrong] = useState(false)
 
   useEffect(() => {
     const onKey = (e) => {
       if (e.shiftKey && (e.key === 'E' || e.key === 'e')) {
         e.preventDefault()
-        setEditing(!editing)
+        if (editing) {
+          setEditing(false)
+          return
+        }
+        if (authorized) {
+          setEditing(true)
+        } else {
+          setAskPw(true)
+          setPw('')
+          setWrong(false)
+        }
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [editing])
+  }, [editing, authorized])
 
-  if (editing) {
-    return (
-      <div className="editbar">
-        <span className="editbar__hint">Shift+E 已开启 · 右侧为作品管理面板（Shift+E 关闭）</span>
-      </div>
-    )
+  const submit = () => {
+    if (checkPassword(pw)) {
+      setAskPw(false)
+      setEditing(true)
+    } else {
+      setWrong(true)
+      setPw('')
+    }
   }
 
-  return null
+  return (
+    <>
+      {askPw && (
+        <div
+          className="ap-pw-mask"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setAskPw(false)
+          }}
+        >
+          <div className="ap-pw">
+            <h3>后台管理验证</h3>
+            <p>请输入后台密码（仅网站所有者使用）</p>
+            <input
+              type="password"
+              autoFocus
+              value={pw}
+              placeholder="后台密码"
+              onChange={(e) => {
+                setPw(e.target.value)
+                setWrong(false)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submit()
+                if (e.key === 'Escape') setAskPw(false)
+              }}
+            />
+            {wrong && <em className="ap-pw__err">密码不正确，请重试</em>}
+            <div className="ap-pw__btns">
+              <button onClick={() => setAskPw(false)}>取消</button>
+              <button className="ap-pw__ok" onClick={submit}>
+                进入后台
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div className="editbar">
+          <span className="editbar__hint">后台管理已开启 · 右侧面板（Shift+E 关闭）</span>
+        </div>
+      )}
+    </>
+  )
 }

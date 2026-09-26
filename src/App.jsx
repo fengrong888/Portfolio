@@ -9,6 +9,7 @@ import Footer from './components/Footer'
 import ClickSpark from './components/ClickSpark'
 import EditBar from './components/EditBar'
 import AdminPanel from './components/AdminPanel'
+import { loadStoredImages } from './lib/edits'
 import CursorDot from './components/CursorDot'
 
 function Shell() {
@@ -38,6 +39,11 @@ function Shell() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // 加载后台上传的作品图片（IndexedDB 本地存储）
+    loadStoredImages()
+  }, [])
+
   useEffect(() => {
     // 禁止网站内所有图片被鼠标右键下载 / 拖拽保存
     const onContext = (e) => {

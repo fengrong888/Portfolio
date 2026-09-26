@@ -1171,3 +1171,80 @@ textarea {
   padding: 8px 12px;
   border-radius: 20px;
 }
+
+/* ============================================================
+   后台：密码验证弹窗 + 作品行上传/删除
+   ============================================================ */
+.ap-pw-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(10, 9, 8, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.ap-pw {
+  width: 320px;
+  padding: 26px 24px;
+  background: rgba(17, 15, 13, 0.97);
+  border: 1px solid rgba(236, 230, 220, 0.14);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  animation: adminIn 0.35s var(--ease-out-expo) both;
+}
+.ap-pw h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+.ap-pw p { margin: 0 0 14px; font-size: 12px; color: var(--ink-dim); }
+.ap-pw input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(236, 230, 220, 0.18);
+  border-radius: 5px;
+  color: var(--ink);
+  font-size: 14px;
+}
+.ap-pw input:focus { outline: none; border-color: var(--accent); }
+.ap-pw__err { display: block; margin-top: 8px; font-style: normal; font-size: 12px; color: #e2695a; }
+.ap-pw__btns { display: flex; gap: 10px; margin-top: 16px; }
+.ap-pw__btns button {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid rgba(236, 230, 220, 0.2);
+  border-radius: 5px;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+.ap-pw__btns .ap-pw__ok { background: var(--accent-bright); color: #1b1916; font-weight: 600; border: none; }
+.ap-row__imgs { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.ap-row__imgs-label { font-size: 11px; color: var(--ink-dim); }
+.ap-up {
+  display: block;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--ink);
+  background: rgba(236, 230, 220, 0.08);
+  border: 1px dashed rgba(236, 230, 220, 0.24);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.25s, color 0.25s;
+}
+.ap-up:hover { border-color: var(--accent); color: var(--accent); }
+.ap-row__del {
+  margin-top: 10px;
+  padding: 7px;
+  border: 1px solid rgba(226, 105, 90, 0.5);
+  border-radius: 4px;
+  background: none;
+  color: #e2695a;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.ap-row__del:hover { background: rgba(226, 105, 90, 0.14); color: #ff8f7d; }

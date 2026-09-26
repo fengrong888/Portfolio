@@ -85,35 +85,41 @@ function computeWorks() {
   const ids = new Set(baseWorks.map((w) => w.id))
   Object.keys(edits).forEach((k) => {
     const m = k.match(/^work-(\d+)-(title|cat|en)$/)
-    if (m) ids.add(Number(m[1]))
+    if (m && edits[`work-${m[1]}-deleted`] !== '1') ids.add(Number(m[1]))
   })
   return [...ids]
     .sort((a, b) => a - b)
     .map((id) => {
+      if (edits[`work-${id}-deleted`] === '1') return null
       const base = baseWorks.find((w) => w.id === id)
       if (base) {
+        const upShots = imageStore[`work-${id}-shots`]
         return {
           ...base,
           title: edits[`work-${id}-title`] ?? base.title,
           cat: edits[`work-${id}-cat`] ?? base.cat,
           en: edits[`work-${id}-en`] ?? base.en,
+          img: imageStore[`work-${id}-img`] || base.img,
+          shots: upShots ? JSON.parse(upShots) : base.shots,
         }
       }
       // 新增作品（尚未提供图片，使用占位封面）
+      const nShots = imageStore[`work-${id}-shots`]
       return {
         id,
         title: edits[`work-${id}-title`] || `新作品 ${id}`,
         cat: edits[`work-${id}-cat`] || '设计项目',
         en: edits[`work-${id}-en`] || 'New Project',
         ratio: '3 / 4',
-        img: NEW_WORK_PLACEHOLDER,
+        img: imageStore[`work-${id}-img`] || NEW_WORK_PLACEHOLDER,
         hover: '#C6CE3B',
-        shots: [],
+        shots: nShots ? JSON.parse(nShots) : [],
         tags: [],
         desc: '',
         _new: true,
       }
     })
+    .filter(Boolean)
 }
 export function buildWorks() {
   if (!worksCache) worksCache = computeWorks()
@@ -151,4 +157,160 @@ export function exportWorks() {
 // 订阅作品列表变化（编辑/新增后实时刷新页面）
 export function useWorks() {
   return useSyncExternalStore(subscribeEdits, buildWorks)
+}
+
+// ---------- 权限：后台入口密码（轻量防误入，非强安全） ----------
+// 如需修改密码，把下方字符串发给我即可更新并部署。
+const ADMIN_PASSWORD = 'frong2026'
+let authorized = false
+try {
+  authorized = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('portfolio-admin-ok') === '1'
+} catch {
+  authorized = false
+}
+export const isAuthorized = () => authorized
+export function checkPassword(pw) {
+  if (pw === ADMIN_PASSWORD) {
+    authorized = true
+    try {
+      sessionStorage.setItem('portfolio-admin-ok', '1')
+    } catch {
+      /* ignore */
+    }
+    listeners.forEach((l) => l())
+    return true
+  }
+  return false
+}
+export function useAuthorized() {
+  return useSyncExternalStore(subscribeEdits, isAuthorized)
+}
+
+// ---------- 删除作品（标记 deleted，导出后部署时从作品列表移除） ----------
+export function deleteWork(id) {
+  const next = { ...edits }
+  Object.keys(next).forEach((k) => {
+    if (k.startsWith(`work-${id}-`)) delete next[k]
+  })
+  next[`work-${id}-deleted`] = '1'
+  edits = next
+  try {
+    localStorage.setItem(KEY, JSON.stringify(edits))
+  } catch {
+    /* ignore */
+  }
+  invalidateWorks()
+  listeners.forEach((l) => l())
+}
+export const getDeletedIds = () =>
+  Object.keys(edits)
+    .filter((k) => /^work-\d+-deleted$/.test(k) && edits[k] === '1')
+    .map((k) => Number(k.match(/^work-(\d+)-/)[1]))
+
+// ---------- 作品图片上传：IndexedDB 持久化（浏览器内预览），导出时打包 ----------
+const IMG_DB = 'portfolio-images'
+let imageStore = {}
+
+function openImgDB() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') return reject(new Error('no indexedDB'))
+    const req = indexedDB.open(IMG_DB, 1)
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains('imgs')) req.result.createObjectStore('imgs')
+    }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+}
+
+export async function putImage(key, value) {
+  try {
+    const db = await openImgDB()
+    await new Promise((res, rej) => {
+      const tx = db.transaction('imgs', 'readwrite')
+      tx.objectStore('imgs').put(value, key)
+      tx.oncomplete = res
+      tx.onerror = () => rej(tx.error)
+    })
+  } catch {
+    /* IndexedDB 不可用则仅本次会话生效 */
+  }
+  imageStore[key] = value
+  invalidateWorks()
+  listeners.forEach((l) => l())
+}
+
+export async function loadStoredImages() {
+  try {
+    const db = await openImgDB()
+    const out = await new Promise((res, rej) => {
+      const tx = db.transaction('imgs', 'readonly')
+      const cur = tx.objectStore('imgs').openCursor()
+      const acc = {}
+      cur.onsuccess = () => {
+        const c = cur.result
+        if (c) {
+          acc[c.key] = c.value
+          c.continue()
+        } else res(acc)
+      }
+      cur.onerror = () => rej(cur.error)
+    })
+    imageStore = out
+  } catch {
+    imageStore = {}
+  }
+  invalidateWorks()
+  listeners.forEach((l) => l())
+}
+
+export function compressImage(file, maxSide = 1400, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height))
+        const w = Math.max(1, Math.round(img.width * scale))
+        const h = Math.max(1, Math.round(img.height * scale))
+        const c = document.createElement('canvas')
+        c.width = w
+        c.height = h
+        c.getContext('2d').drawImage(img, 0, 0, w, h)
+        resolve(c.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = reject
+      img.src = reader.result
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+// 导出完整后台数据（文字 + 删除标记 + 上传图片），下载文件后发回部署
+export async function exportAllData() {
+  const deleted = getDeletedIds()
+  const works = buildWorks()
+    .filter((w) => !deleted.includes(w.id))
+    .map((w) => ({
+      id: w.id,
+      title: w.title,
+      cat: w.cat,
+      en: w.en,
+      new: !!w._new,
+      img: w.img,
+      shots: w.shots,
+      hover: w.hover,
+    }))
+  return JSON.stringify(
+    {
+      version: 1,
+      works,
+      deleted,
+      textEdits: edits,
+      images: imageStore,
+    },
+    null,
+    2
+  )
 }
