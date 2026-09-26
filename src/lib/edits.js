@@ -13,11 +13,18 @@ try {
 }
 
 let editing = false
+let rev = 0
 const listeners = new Set()
 
 export const getEdits = () => edits
 export const isEditing = () => editing
 
+export function bumpRev() {
+  rev += 1
+}
+export function useEditsRev() {
+  return useSyncExternalStore(subscribeEdits, () => rev)
+}
 export function setEditing(v) {
   editing = v
   if (typeof document !== 'undefined') {
@@ -161,7 +168,7 @@ export function useWorks() {
 
 // ---------- 权限：后台入口密码（轻量防误入，非强安全） ----------
 // 如需修改密码，把下方字符串发给我即可更新并部署。
-const ADMIN_PASSWORD = 'frong2026'
+const ADMIN_PASSWORD = '120589'
 let authorized = false
 try {
   authorized = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('portfolio-admin-ok') === '1'
@@ -236,6 +243,25 @@ export async function putImage(key, value) {
     /* IndexedDB 不可用则仅本次会话生效 */
   }
   imageStore[key] = value
+  invalidateWorks()
+  listeners.forEach((l) => l())
+}
+
+export const getStoredImage = (key) => imageStore[key] ?? null
+
+export async function removeImage(key) {
+  try {
+    const db = await openImgDB()
+    await new Promise((res, rej) => {
+      const tx = db.transaction('imgs', 'readwrite')
+      tx.objectStore('imgs').delete(key)
+      tx.oncomplete = res
+      tx.onerror = () => rej(tx.error)
+    })
+  } catch {
+    /* ignore */
+  }
+  delete imageStore[key]
   invalidateWorks()
   listeners.forEach((l) => l())
 }

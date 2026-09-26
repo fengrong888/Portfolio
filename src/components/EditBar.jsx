@@ -78,11 +78,6 @@ export default function EditBar() {
         </div>
       )}
 
-      {editing && (
-        <div className="editbar">
-          <span className="editbar__hint">后台管理已开启 · 右侧面板（Shift+E 关闭）</span>
-        </div>
-      )}
     </>
   )
 }

@@ -1248,3 +1248,15 @@ textarea {
   transition: background 0.25s, color 0.25s;
 }
 .ap-row__del:hover { background: rgba(226, 105, 90, 0.14); color: #ff8f7d; }
+.ap-rm {
+  margin-top: 2px;
+  padding: 6px;
+  border: 1px solid rgba(236, 230, 220, 0.18);
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-dim);
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.25s, border-color 0.25s;
+}
+.ap-rm:hover { color: #e2695a; border-color: rgba(226, 105, 90, 0.5); }

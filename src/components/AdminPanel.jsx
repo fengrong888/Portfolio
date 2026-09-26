@@ -10,6 +10,9 @@ import {
   setEditing,
   compressImage,
   putImage,
+  removeImage,
+  getStoredImage,
+  useEditsRev,
   exportAllData,
 } from '../lib/edits'
 
@@ -23,6 +26,9 @@ function WorkRow({ work }) {
   const [upShots, setUpShots] = useState(false)
   const coverRef = useRef(null)
   const shotsRef = useRef(null)
+  useEditsRev()
+  const hasCover = !!getStoredImage(`work-${id}-img`)
+  const hasShots = !!getStoredImage(`work-${id}-shots`)
   const title = useEdit(`work-${id}-title`, work.title)
   const cat = useEdit(`work-${id}-cat`, work.cat)
   const en = useEdit(`work-${id}-en`, work.en)
@@ -86,6 +92,16 @@ function WorkRow({ work }) {
               <input ref={shotsRef} type="file" accept="image/*" multiple onChange={onShots} hidden />
               {upShots ? '✓ 详情图已上传' : '上传详情图（可多选）'}
             </label>
+            {hasCover && (
+              <button className="ap-rm" onClick={() => removeImage(`work-${id}-img`)}>
+                移除已上传封面
+              </button>
+            )}
+            {hasShots && (
+              <button className="ap-rm" onClick={() => removeImage(`work-${id}-shots`)}>
+                移除已上传详情图
+              </button>
+            )}
           </div>
 
           {work._new && (
