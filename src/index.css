@@ -1029,7 +1029,7 @@ textarea {
   .about__rule-top, .about__rule-bottom { width: 90vw; margin-inline: 5vw; }
   .about__clients-title { margin-left: 5vw; }
   .about__clients-wall { width: 90vw; margin-inline: 5vw; }
-  .about__profile { gap: 6vw; }
+  .about__profile { gap: 6vw; margin-left: 5vw; }
   .about__p-info { padding-top: 6vw; }
 
   /* 联系页内容居中展示 */
