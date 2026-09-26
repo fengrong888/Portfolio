@@ -142,7 +142,11 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
             <div className="ap-shots__list">
               {shots.map((s, i) => (
                 <div className="ap-shot" key={`${s.slice(0, 24)}-${i}`}>
-                  <label className="ap-shot__add ap-shot__add--before" title="在此图前插入">
+                  <img src={s} alt={`详情图 ${i + 1}`} />
+                  <button className="ap-shot__del" title="删除此图" onClick={() => onDeleteShot(i)}>
+                    ×
+                  </button>
+                  <label className="ap-shot__ins ap-shot__ins--before" title="在此图前插入">
                     <input
                       ref={insertRef}
                       type="file"
@@ -152,11 +156,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
                     />
                     ＋
                   </label>
-                  <img src={s} alt={`详情图 ${i + 1}`} />
-                  <button className="ap-shot__del" title="删除此图" onClick={() => onDeleteShot(i)}>
-                    ×
-                  </button>
-                  <label className="ap-shot__add ap-shot__add--after" title="在此图后插入">
+                  <label className="ap-shot__ins ap-shot__ins--after" title="在此图后插入">
                     <input
                       ref={insertRef}
                       type="file"
