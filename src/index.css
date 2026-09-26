@@ -370,6 +370,8 @@ dl, dd { margin: 0; }
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  /* 顶部留出固定导航的高度，首图不被遮挡 */
+  padding-top: var(--nav-h);
 }
 
 .detail__figure {
