@@ -94,8 +94,23 @@ function computeWorks() {
     const m = k.match(/^work-(\d+)-(title|cat|en)$/)
     if (m && edits[`work-${m[1]}-deleted`] !== '1') ids.add(Number(m[1]))
   })
-  return [...ids]
-    .sort((a, b) => a - b)
+  let order = null
+  try {
+    order = JSON.parse(edits['work-order'] || 'null')
+  } catch {
+    order = null
+  }
+  const sorted = [...ids]
+  if (Array.isArray(order) && order.length) {
+    sorted.sort((a, b) => {
+      const ia = order.indexOf(a)
+      const ib = order.indexOf(b)
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
+    })
+  } else {
+    sorted.sort((a, b) => a - b)
+  }
+  return sorted
     .map((id) => {
       if (edits[`work-${id}-deleted`] === '1') return null
       const base = baseWorks.find((w) => w.id === id)
@@ -134,6 +149,19 @@ export function buildWorks() {
 }
 function invalidateWorks() {
   worksCache = null
+}
+
+// 作品排序：拖拽调整后写入 work-order（JSON 数组），部署时按此固化
+export function setWorkOrder(ids) {
+  applyEdit('work-order', JSON.stringify(ids))
+}
+export const getWorkOrder = () => {
+  try {
+    const v = JSON.parse(edits['work-order'] || 'null')
+    return Array.isArray(v) ? v : null
+  } catch {
+    return null
+  }
 }
 
 // 下一个可用作品 id（基础最大 id + 本地新增中最大 id 之后）
@@ -248,6 +276,16 @@ export async function putImage(key, value) {
 }
 
 export const getStoredImage = (key) => imageStore[key] ?? null
+
+// 详情图列表管理：基于当前生效 shots 删除/插入单张（含基础图混合）
+export async function deleteShot(id, currentShots, index) {
+  const next = currentShots.filter((_, i) => i !== index)
+  await putImage(`work-${id}-shots`, JSON.stringify(next))
+}
+export async function insertShot(id, currentShots, index, dataUrl) {
+  const next = [...currentShots.slice(0, index), dataUrl, ...currentShots.slice(index)]
+  await putImage(`work-${id}-shots`, JSON.stringify(next))
+}
 
 export async function removeImage(key) {
   try {
