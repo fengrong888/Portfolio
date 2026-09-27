@@ -2,6 +2,21 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // 强制动效：公司/系统关闭动画效果时，网站默认尊重系统设置折叠动效。
+      // 打开一次 ?fx=1 即在本机记住"始终开启动效"（localStorage 标记）。
+      ;(function () {
+        try {
+          var fx =
+            new URLSearchParams(location.search).get('fx') === '1' ||
+            localStorage.getItem('pfx-force') === '1'
+          if (fx) {
+            localStorage.setItem('pfx-force', '1')
+            document.documentElement.classList.add('fx-force')
+          }
+        } catch (e) {}
+      })()
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fengrong-Portfolio</title>
     <meta

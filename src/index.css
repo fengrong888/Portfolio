@@ -166,7 +166,7 @@ dl, dd { margin: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nav.intro .nav__link-mask-in { animation: none; }
+  html:not(.fx-force) .nav.intro .nav__link-mask-in { animation: none; }
 }
 
 @media (max-width: 560px) {
@@ -863,14 +863,14 @@ dl, dd { margin: 0; }
    无障碍：减少动效
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  html:not(.fx-force) *,
+  html:not(.fx-force) *::before,
+  html:not(.fx-force) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  html { scroll-behavior: auto; }
+  html:not(.fx-force) { scroll-behavior: auto; }
 }
 
 /* ============================================================
@@ -1009,9 +1009,9 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .detail__back:hover .lu__c,
-  .detail__arrow:hover .lu__c,
-  .nav__link:hover .nav__l { animation: none; }
+  html:not(.fx-force) .detail__back:hover .lu__c,
+  html:not(.fx-force) .detail__arrow:hover .lu__c,
+  html:not(.fx-force) .nav__link:hover .nav__l { animation: none; }
 }
 
 /* ============================================================
