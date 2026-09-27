@@ -9,10 +9,7 @@ import Editable from './Editable'
 const springValues = { damping: 30, stiffness: 100, mass: 2 }
 const ROTATE_AMPLITUDE = 9
 const SCALE_ON_HOVER = 1.05
-const reduceMotionNow = () =>
-  typeof window !== 'undefined' &&
-  !document.documentElement.classList.contains('fx-force') &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+// 全站默认强制动效：悬停动画始终走过渡
 
 export default function WorkCard({ work, index }) {
   const ref = useRef(null)
@@ -53,12 +50,6 @@ export default function WorkCard({ work, index }) {
 
   function playEnter() {
     gsap.killTweensOf([imgRef.current, fillRef.current, introRef.current?.children])
-    if (reduceMotionNow()) {
-      gsap.set(imgRef.current, { autoAlpha: 0, scale: 1 })
-      gsap.set(fillRef.current, { autoAlpha: 1 })
-      gsap.set(introRef.current.children, { autoAlpha: 1, y: 0 })
-      return
-    }
     // 封面图片淡出（微放）融成纯色，纯色同步淡入
     gsap
       .timeline()
@@ -90,12 +81,6 @@ export default function WorkCard({ work, index }) {
 
   function playLeave() {
     gsap.killTweensOf([imgRef.current, fillRef.current, introRef.current?.children])
-    if (reduceMotionNow()) {
-      gsap.set(imgRef.current, { autoAlpha: 1, scale: 1 })
-      gsap.set(fillRef.current, { autoAlpha: 0 })
-      gsap.set(introRef.current.children, { autoAlpha: 0, y: 30 })
-      return
-    }
     // 纯色淡出，封面图片淡回
     gsap.to(imgRef.current, { autoAlpha: 1, scale: 1, duration: 0.55, ease: 'power2.out' })
     gsap.to(fillRef.current, { autoAlpha: 0, duration: 0.5, ease: 'power2.inOut' })

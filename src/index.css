@@ -165,9 +165,7 @@ dl, dd { margin: 0; }
   to { transform: translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html:not(.fx-force) .nav.intro .nav__link-mask-in { animation: none; }
-}
+/* 全站默认强制动效（用户要求）：不再响应系统"减少动画"设置 */
 
 @media (max-width: 560px) {
   .nav__links { gap: 14px; }
@@ -862,16 +860,7 @@ dl, dd { margin: 0; }
 /* ============================================================
    无障碍：减少动效
    ============================================================ */
-@media (prefers-reduced-motion: reduce) {
-  html:not(.fx-force) *,
-  html:not(.fx-force) *::before,
-  html:not(.fx-force) *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  html:not(.fx-force) { scroll-behavior: auto; }
-}
+
 
 /* ============================================================
    在线编辑：右下角工具栏 + 编辑模式高亮
@@ -1008,11 +997,7 @@ textarea {
   animation-delay: calc(var(--i) * 0.06s);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html:not(.fx-force) .detail__back:hover .lu__c,
-  html:not(.fx-force) .detail__arrow:hover .lu__c,
-  html:not(.fx-force) .nav__link:hover .nav__l { animation: none; }
-}
+
 
 /* ============================================================
    移动端适配（≤560px）：瀑布流 2 列 / 详情图加宽 / 关于我内容加宽 / 联系居中

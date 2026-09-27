@@ -1,11 +1,8 @@
 // 动效系统：IntersectionObserver 一次性揭示 + 轻量 rAF 视差
 // 只动 transform / opacity / clip-path；prefers-reduced-motion 下全部降级。
 
-// 运行时判断：系统减少动画时降级，但 .fx-force（?fx=1 强制动效）时保持全动效
-export const reducedMotionNow = () =>
-  typeof window !== 'undefined' &&
-  !document.documentElement.classList.contains('fx-force') &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+// 全站默认强制动效（用户要求）：不再响应系统"减少动画"设置
+export const reducedMotionNow = () => false
 
 // ---------- 滚动揭示：进入视口后加 .in（一次性） ----------
 let io = null
