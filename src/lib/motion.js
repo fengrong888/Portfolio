@@ -1,8 +1,10 @@
 // 动效系统：IntersectionObserver 一次性揭示 + 轻量 rAF 视差
 // 只动 transform / opacity / clip-path；prefers-reduced-motion 下全部降级。
 
-export const reducedMotion =
+// 运行时判断：系统减少动画时降级，但 .fx-force（?fx=1 强制动效）时保持全动效
+export const reducedMotionNow = () =>
   typeof window !== 'undefined' &&
+  !document.documentElement.classList.contains('fx-force') &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // ---------- 滚动揭示：进入视口后加 .in（一次性） ----------
@@ -27,7 +29,7 @@ function getIO() {
 
 export function observeIn(el) {
   if (!el) return
-  if (reducedMotion) {
+  if (reducedMotionNow()) {
     el.classList.add('in')
     return
   }
@@ -68,7 +70,7 @@ function requestParallax() {
 }
 
 export function addParallax(el) {
-  if (!el || reducedMotion) return
+  if (!el || reducedMotionNow()) return
   pxEls.add(el)
   requestParallax()
   if (pxEls.size === 1) {

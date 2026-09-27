@@ -9,8 +9,9 @@ import Editable from './Editable'
 const springValues = { damping: 30, stiffness: 100, mass: 2 }
 const ROTATE_AMPLITUDE = 9
 const SCALE_ON_HOVER = 1.05
-const reduceMotion =
+const reduceMotionNow = () =>
   typeof window !== 'undefined' &&
+  !document.documentElement.classList.contains('fx-force') &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export default function WorkCard({ work, index }) {
@@ -52,7 +53,7 @@ export default function WorkCard({ work, index }) {
 
   function playEnter() {
     gsap.killTweensOf([imgRef.current, fillRef.current, introRef.current?.children])
-    if (reduceMotion) {
+    if (reduceMotionNow()) {
       gsap.set(imgRef.current, { autoAlpha: 0, scale: 1 })
       gsap.set(fillRef.current, { autoAlpha: 1 })
       gsap.set(introRef.current.children, { autoAlpha: 1, y: 0 })
@@ -89,7 +90,7 @@ export default function WorkCard({ work, index }) {
 
   function playLeave() {
     gsap.killTweensOf([imgRef.current, fillRef.current, introRef.current?.children])
-    if (reduceMotion) {
+    if (reduceMotionNow()) {
       gsap.set(imgRef.current, { autoAlpha: 1, scale: 1 })
       gsap.set(fillRef.current, { autoAlpha: 0 })
       gsap.set(introRef.current.children, { autoAlpha: 0, y: 30 })
