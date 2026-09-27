@@ -1323,3 +1323,54 @@ textarea {
   align-self: center;
   min-width: 96px;
 }
+
+/* 后台 · 云端同步 */
+.adminpanel__cloud {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(220, 195, 148, 0.22);
+  border-radius: 10px;
+  background: rgba(28, 25, 22, 0.5);
+}
+.adminpanel__cloud h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: #dcc394;
+}
+.adminpanel__cloud p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.6);
+}
+.ap-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(10, 9, 8, 0.7);
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.ap-input:focus {
+  border-color: rgba(220, 195, 148, 0.55);
+}
+.adminpanel__cloud-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap-btn--cloud {
+  border: 1px solid rgba(220, 195, 148, 0.35) !important;
+  color: #dcc394 !important;
+}
+.adminpanel__cloud-status {
+  margin: 10px 0 0 !important;
+  font-size: 12px !important;
+  color: rgba(220, 195, 148, 0.9) !important;
+}

@@ -9,7 +9,7 @@ import Footer from './components/Footer'
 import ClickSpark from './components/ClickSpark'
 import EditBar from './components/EditBar'
 import AdminPanel from './components/AdminPanel'
-import { loadStoredImages } from './lib/edits'
+import { loadStoredImages, loadCloud } from './lib/edits'
 import CursorDot from './components/CursorDot'
 
 function Shell() {
@@ -42,6 +42,8 @@ export default function App() {
   useEffect(() => {
     // 加载后台上传的作品图片（IndexedDB 本地存储）
     loadStoredImages()
+    // 加载云端同步数据（GitHub 仓库数据文件），与本地编辑合并后生效
+    loadCloud()
   }, [])
 
   useEffect(() => {

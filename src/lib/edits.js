@@ -42,6 +42,7 @@ export function applyEdit(k, v) {
     /* 存储不可用时仅本次会话生效 */
   }
   listeners.forEach((l) => l())
+  queueSync()
 }
 
 export function clearEdits() {
@@ -236,6 +237,7 @@ export function deleteWork(id) {
   }
   invalidateWorks()
   listeners.forEach((l) => l())
+  queueSync()
 }
 export const getDeletedIds = () =>
   Object.keys(edits)
@@ -273,6 +275,20 @@ export async function putImage(key, value) {
   imageStore[key] = value
   invalidateWorks()
   listeners.forEach((l) => l())
+  // 云端同步：dataURL 上传为仓库路径后全端可见（失败时保持本地，下次再试）
+  if (token) {
+    syncImageToCloud(key, value)
+      .then((next) => {
+        if (next !== value) {
+          invalidateWorks()
+          listeners.forEach((l) => l())
+        }
+        queueSync(200)
+      })
+      .catch(() => {
+        /* 单次失败保留本地 */
+      })
+  }
 }
 
 export const getStoredImage = (key) => imageStore[key] ?? null
@@ -299,9 +315,13 @@ export async function removeImage(key) {
   } catch {
     /* ignore */
   }
+  const removed = imageStore[key]
   delete imageStore[key]
   invalidateWorks()
   listeners.forEach((l) => l())
+  removeCloudLinked(key, removed).then(() => {
+    if (token) queueSync(200)
+  })
 }
 
 export async function loadStoredImages() {
@@ -377,4 +397,357 @@ export async function exportAllData() {
     null,
     2
   )
+}
+
+// ============================================================
+// 云端同步层（GitHub 仓库数据文件直写）：管理后台修改自动同步到所有设备
+// 数据文件：docs/data/portfolio-data.json（公开可读）；图片：docs/data/imgs/
+// 写入令牌只存在用户浏览器 localStorage，网站代码不含令牌（访客只读，无法写入）
+// ============================================================
+const CLOUD_REPO = 'fengrong888/Portfolio'
+const CLOUD_FILE = 'docs/data/portfolio-data.json'
+const CLOUD_IMGS_DIR = 'docs/data/imgs/'
+const TOKEN_KEY = 'pf-github-token'
+
+let token = ''
+try {
+  token = localStorage.getItem(TOKEN_KEY) || ''
+} catch {
+  token = ''
+}
+let cloudEdits = {}
+let cloudImages = {}
+let cloudLoaded = false
+let syncing = false
+let syncError = ''
+let lastSyncAt = 0
+let syncTimer = 0
+const cloudListeners = new Set()
+
+export const getCloudToken = () => token
+export function setCloudToken(t) {
+  token = (t || '').trim()
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    /* ignore */
+  }
+  notifyCloud()
+}
+export function subscribeCloud(fn) {
+  cloudListeners.add(fn)
+  return () => cloudListeners.delete(fn)
+}
+let cloudStatusCache = null
+export function getCloudStatus() {
+  const s = {
+    configured: !!token,
+    syncing,
+    error: syncError,
+    lastSync: lastSyncAt,
+    loaded: cloudLoaded,
+    cloudEditCount: Object.keys(cloudEdits).length,
+  }
+  // 快照必须保持引用稳定（useSyncExternalStore 依赖 Object.is），否则触发无限渲染
+  if (!cloudStatusCache || JSON.stringify(s) !== JSON.stringify(cloudStatusCache)) {
+    cloudStatusCache = s
+  }
+  return cloudStatusCache
+}
+export function useCloudStatus() {
+  return useSyncExternalStore(subscribeCloud, getCloudStatus)
+}
+function notifyCloud() {
+  cloudListeners.forEach((l) => l())
+}
+
+function cloudURL(path) {
+  return `https://api.github.com/repos/${CLOUD_REPO}/contents/${path}`
+}
+async function ghFetch(path, init) {
+  const res = await fetch(cloudURL(path), {
+    ...init,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers || {}),
+    },
+  })
+  return res
+}
+
+// 读取云端数据文件（站内公开 fetch，无需令牌）：与本地编辑合并后生效
+export async function loadCloud() {
+  try {
+    const res = await fetch('./data/portfolio-data.json', { cache: 'no-store' })
+    if (!res.ok) throw new Error(`cloud file ${res.status}`)
+    const data = await res.json()
+    cloudEdits = data.edits && typeof data.edits === 'object' ? data.edits : {}
+    cloudImages = data.images && typeof data.images === 'object' ? data.images : {}
+    cloudLoaded = true
+    mergeAndNotify()
+  } catch {
+    cloudLoaded = false
+    // 云端不可达时仍以本地为准（离线兜底）
+  }
+  notifyCloud()
+}
+
+// 合并规则：本地 edits 覆盖云端 edits（本地含最新未同步操作）
+function mergeAndNotify() {
+  edits = { ...cloudEdits, ...localEditsRaw() }
+  invalidateWorks()
+  listeners.forEach((l) => l())
+}
+function localEditsRaw() {
+  let local = {}
+  try {
+    local = JSON.parse(localStorage.getItem(KEY) || '{}')
+  } catch {
+    local = {}
+  }
+  return local
+}
+function persistLocal(v) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(v))
+  } catch {
+    /* ignore */
+  }
+}
+
+// 触发云端同步（防抖）：文本、排序、删除、图片变化后自动调用
+function queueSync(delay = 600) {
+  if (!token) return
+  if (syncTimer) clearTimeout(syncTimer)
+  syncTimer = setTimeout(() => {
+    syncNow()
+  }, delay)
+}
+
+// 把当前生效数据写入云端 JSON（合并本地 + 既有云端）
+export async function syncNow() {
+  if (!token) return { ok: false, error: 'no-token' }
+  if (syncing) return { ok: false, error: 'busy' }
+  syncing = true
+  syncError = ''
+  notifyCloud()
+  try {
+    const merged = { ...cloudEdits, ...localEditsRaw() }
+    // 云端图片路径映射（不含本地未同步的 dataURL）
+    const imgs = { ...cloudImages }
+    await ghPutJson(merged, imgs)
+    cloudEdits = merged
+    cloudImages = imgs
+    lastSyncAt = Date.now()
+    notifyCloud()
+    return { ok: true }
+  } catch (e) {
+    syncError = e?.message || '同步失败'
+    notifyCloud()
+    return { ok: false, error: syncError }
+  } finally {
+    syncing = false
+    notifyCloud()
+  }
+}
+
+// PUT 云端 JSON（带 sha 乐观锁；409 冲突时重拉最新合并后重试一次）
+async function ghPutJson(merged, imgs, retried = false) {
+  const body = JSON.stringify({ version: 1, edits: merged, images: imgs })
+  const b64 = btoa(unescape(encodeURIComponent(body)))
+  let sha = null
+  try {
+    const cur = await ghFetch(CLOUD_FILE)
+    if (cur.ok) {
+      const j = await cur.json()
+      sha = j.sha
+      // 以云端最新为基底，重新叠加本地，避免覆盖他人/其他设备刚同步的修改
+      const latest = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g, '')))))
+      if (latest && latest.edits) {
+        merged = { ...latest.edits, ...localEditsRaw() }
+        imgs = { ...(latest.images || {}), ...imgs }
+      }
+    }
+  } catch {
+    /* 首次推送文件可能不存在 */
+  }
+  const res = await ghFetch(CLOUD_FILE, {
+    method: 'PUT',
+    body: JSON.stringify({
+      message: `sync portfolio data ${new Date().toISOString().slice(0, 16)}`,
+      content: b64,
+      ...(sha ? { sha } : {}),
+    }),
+  })
+  if (res.status === 409 && !retried) {
+    return ghPutJson(merged, imgs, true)
+  }
+  if (!res.ok) {
+    throw new Error(`PUT ${res.status} ${(await res.text()).slice(0, 120)}`)
+  }
+  return res
+}
+
+// 上传单张图片到云端 imgs/ 目录，返回相对路径
+async function ghPutImage(dataUrl, name) {
+  const m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/)
+  if (!m) throw new Error('bad dataURL')
+  const ext = m[1] === 'jpeg' ? 'jpg' : m[1]
+  const path = `${CLOUD_IMGS_DIR}${name}.${ext}`
+  const res = await ghFetch(path, {
+    method: 'PUT',
+    body: JSON.stringify({
+      message: `upload img ${name}`,
+      content: m[2],
+    }),
+  })
+  if (!res.ok) throw new Error(`IMG PUT ${res.status}`)
+  return `./${path}`
+}
+// 删除云端图片文件
+async function ghDeleteImage(relPath) {
+  const path = relPath.replace(/^\.\//, '')
+  if (!path.startsWith(CLOUD_IMGS_DIR)) return
+  const cur = await ghFetch(path)
+  if (!cur.ok) return
+  const j = await cur.json()
+  const res = await ghFetch(path, {
+    method: 'DELETE',
+    body: JSON.stringify({ message: `remove img ${path}`, sha: j.sha }),
+  })
+  if (!res.ok) throw new Error(`IMG DEL ${res.status}`)
+}
+
+// 图片上传后的云端同步：dataURL -> 上传 -> 就地替换为路径
+async function syncImageToCloud(key, value) {
+  if (!token) return value
+  if (typeof value === 'string' && value.startsWith('data:image/')) {
+    const name = `${key}-${Date.now().toString(36)}`
+    const p = await ghPutImage(value, name)
+    // 记录映射并推送 JSON（映射更新后随下次 syncNow 一并写入）
+    cloudImages[key] = p
+    imageStore[key] = p // 本机立即以云端路径显示
+    try {
+      const db = await openImgDB()
+      await new Promise((res, rej) => {
+        const tx = db.transaction('imgs', 'readwrite')
+        tx.objectStore('imgs').put(p, key)
+        tx.oncomplete = res
+        tx.onerror = () => rej(tx.error)
+      })
+    } catch {
+      /* ignore */
+    }
+    return p
+  }
+  if (typeof value === 'string') {
+    try {
+      const arr = JSON.parse(value)
+      if (Array.isArray(arr)) {
+        const out = []
+        for (let i = 0; i < arr.length; i++) {
+          const it = arr[i]
+          if (typeof it === 'string' && it.startsWith('data:image/')) {
+            const name = `${key}-${i}-${Date.now().toString(36)}`
+            const p = await ghPutImage(it, name)
+            out.push(p)
+          } else out.push(it)
+        }
+        const next = JSON.stringify(out)
+        cloudImages[key] = out
+        imageStore[key] = next
+        try {
+          const db = await openImgDB()
+          await new Promise((res, rej) => {
+            const tx = db.transaction('imgs', 'readwrite')
+            tx.objectStore('imgs').put(next, key)
+            tx.oncomplete = res
+            tx.onerror = () => rej(tx.error)
+          })
+        } catch {
+          /* ignore */
+        }
+        return next
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return value
+}
+
+// 迁移：把本机 IndexedDB 里的历史图片全部推送到云端（一次操作后全端可见）
+export async function migrateCloudImages(onProgress) {
+  if (!token) return { ok: false, error: 'no-token' }
+  const keys = Object.keys(imageStore).filter((k) => {
+    const v = imageStore[k]
+    return typeof v === 'string' && v.startsWith('data:image/')
+  })
+  // shots 数组里也可能有 dataURL
+  const shotKeys = Object.keys(imageStore).filter((k) => {
+    const v = imageStore[k]
+    if (typeof v !== 'string' || v.startsWith('data:image/')) return false
+    try {
+      const arr = JSON.parse(v)
+      return Array.isArray(arr) && arr.some((x) => typeof x === 'string' && x.startsWith('data:image/'))
+    } catch {
+      return false
+    }
+  })
+  const total = keys.length + shotKeys.length
+  if (total === 0) return { ok: true, migrated: 0 }
+  let done = 0
+  for (const k of keys) {
+    try {
+      const p = await syncImageToCloud(k, imageStore[k])
+      done += 1
+      onProgress?.(done, total)
+    } catch {
+      /* 单张失败继续其余 */
+    }
+  }
+  for (const k of shotKeys) {
+    try {
+      const next = await syncImageToCloud(k, imageStore[k])
+      done += 1
+      onProgress?.(done, total)
+    } catch {
+      /* ignore */
+    }
+  }
+  queueSync(200)
+  return { ok: true, migrated: done }
+}
+
+// 图片删除的云端联动：若该项已是云端路径，删除文件并更新映射
+async function removeCloudLinked(key, value) {
+  if (!token) return
+  if (typeof value === 'string' && value.startsWith('./')) {
+    try {
+      await ghDeleteImage(value)
+    } catch {
+      /* ignore */
+    }
+    delete cloudImages[key]
+  }
+  if (typeof value === 'string') {
+    try {
+      const arr = JSON.parse(value)
+      if (Array.isArray(arr)) {
+        const paths = arr.filter((x) => typeof x === 'string' && x.startsWith('./'))
+        for (const p of paths) {
+          try {
+            await ghDeleteImage(p)
+          } catch {
+            /* ignore */
+          }
+        }
+        delete cloudImages[key]
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 }
