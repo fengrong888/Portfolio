@@ -209,23 +209,32 @@ export default function AdminPanel() {
   const [tok, setTok] = useState(getCloudToken())
   const [migMsg, setMigMsg] = useState('')
 
-  const handleSaveToken = () => {
+  const handleSaveToken = async () => {
     setCloudToken(tok)
-    if (tok.trim()) syncNow()
+    if (tok.trim()) {
+      setMigMsg('正在连接云端…')
+      await syncNow()
+      // 首次连接后自动把本机已上传的图片静默推送到云端
+      try {
+        const r = await migrateCloudImages()
+        setMigMsg(r.ok && r.migrated ? `✓ 已连接并同步 ${r.migrated} 张图片` : '✓ 已连接云端')
+      } catch {
+        setMigMsg('✓ 已连接云端')
+      }
+      setTimeout(() => setMigMsg(''), 3000)
+    }
   }
-  const handleSync = async () => {
-    setMigMsg('')
-    const r = await syncNow()
-    setMigMsg(r.ok ? '✓ 已同步到云端' : `同步失败：${r.error || '请检查令牌'}`)
-    setTimeout(() => setMigMsg(''), 3000)
-  }
-  const handleMigrate = async () => {
-    if (!window.confirm('把本机浏览器里已上传的图片全部推送到云端？推送后所有设备可见。')) return
-    setMigMsg('正在上传图片…')
-    const r = await migrateCloudImages((d, t) => setMigMsg(`正在上传图片… ${d}/${t}`))
-    if (r.ok) setMigMsg(r.migrated ? `✓ 已上传 ${r.migrated} 张图片` : '本机没有需要上传的图片')
-    else setMigMsg('迁移失败：请先保存令牌')
-    setTimeout(() => setMigMsg(''), 4000)
+  const handleDone = async () => {
+    // 点「完成」时确保所有修改已同步到云端（含自动上传未同步的本地图片）
+    if (cloud.configured) {
+      try {
+        await syncNow()
+        await migrateCloudImages()
+      } catch {
+        /* 同步失败不阻断退出后台 */
+      }
+    }
+    setEditing(false)
   }
 
   if (!editing) return null
@@ -288,43 +297,32 @@ export default function AdminPanel() {
         ))}
       </div>
 
-      <div className="adminpanel__cloud">
-        <h3>云端同步（全设备）</h3>
-        <p>
-          填入 GitHub 访问令牌后，后台的任何修改（文字/排序/删除/上传图片）将自动同步到云端，
-          所有设备打开网站都会看到最新内容，无需再导出文件发回。
-          令牌只保存在当前浏览器，不会出现在网站代码里，访客无法修改你的数据。
-        </p>
-        <input
-          className="ap-input"
-          type="password"
-          placeholder="GitHub 访问令牌 (PAT)"
-          value={tok}
-          onChange={(e) => setTok(e.target.value)}
-          autoComplete="off"
-        />
-        <div className="adminpanel__cloud-row">
-          <button className="ap-btn ap-btn--cloud" onClick={handleSaveToken}>
-            保存令牌
-          </button>
-          <button className="ap-btn ap-btn--cloud" onClick={handleSync}>
-            立即同步
-          </button>
-          <button className="ap-btn ap-btn--cloud" onClick={handleMigrate}>
-            上传本机图片到云端
-          </button>
+      {!cloud.configured && (
+        <div className="adminpanel__cloud">
+          <h3>云端同步（全设备）· 首次连接</h3>
+          <p>
+            填入 GitHub 访问令牌，后台的任何修改（文字/排序/删除/上传图片）将自动同步到云端，
+            所有设备打开网站都会看到最新内容。令牌只保存在当前浏览器，不会出现在网站代码里。
+          </p>
+          <input
+            className="ap-input"
+            type="password"
+            placeholder="GitHub 访问令牌 (PAT)"
+            value={tok}
+            onChange={(e) => setTok(e.target.value)}
+            autoComplete="off"
+          />
+          <div className="adminpanel__cloud-row">
+            <button className="ap-btn ap-btn--cloud" onClick={handleSaveToken}>
+              保存并连接
+            </button>
+          </div>
+          <p className="adminpanel__cloud-status">
+            {cloud.syncing ? '正在连接…' : cloud.error ? `连接失败：${cloud.error}` : '未配置：修改仅当前浏览器可见'}
+            {migMsg ? `　${migMsg}` : ''}
+          </p>
         </div>
-        <p className="adminpanel__cloud-status">
-          {cloud.syncing
-            ? '正在同步…'
-            : cloud.error
-              ? `同步失败：${cloud.error}`
-              : cloud.configured
-                ? `✓ 云端已连接 · 最近同步 ${cloud.lastSync ? new Date(cloud.lastSync).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '—'}`
-                : '未配置令牌：修改仅当前浏览器可见'}
-          {migMsg ? `　${migMsg}` : ''}
-        </p>
-      </div>
+      )}
 
       <div className="adminpanel__foot">
         <button className="ap-btn ap-btn--add" onClick={handleAdd}>
@@ -341,13 +339,8 @@ export default function AdminPanel() {
         >
           恢复默认
         </button>
-        <button
-          className="ap-btn ap-btn--done"
-          onClick={() => {
-            setEditing(false)
-          }}
-        >
-          完成
+        <button className="ap-btn ap-btn--done" onClick={handleDone}>
+          完成（自动同步）
         </button>
       </div>
     </aside>
