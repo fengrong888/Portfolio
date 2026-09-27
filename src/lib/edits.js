@@ -477,20 +477,37 @@ async function ghFetch(path, init) {
   return res
 }
 
-// 读取云端数据文件（站内公开 fetch，无需令牌）：与本地编辑合并后生效
+// 读取云端数据：优先 GitHub API（实时返回，绕过 Pages CDN 缓存，修改后立即生效）；
+// API 不可达时回退站内数据文件（可能有 1 分钟缓存延迟）。
 export async function loadCloud() {
+  let data = null
   try {
-    const res = await fetch('./data/portfolio-data.json', { cache: 'no-store' })
-    if (!res.ok) throw new Error(`cloud file ${res.status}`)
-    const data = await res.json()
-    cloudEdits = data.edits && typeof data.edits === 'object' ? data.edits : {}
-    cloudImages = data.images && typeof data.images === 'object' ? data.images : {}
-    cloudLoaded = true
-    mergeAndNotify()
+    const res = await fetch(
+      `https://api.github.com/repos/${CLOUD_REPO}/contents/${CLOUD_FILE}`,
+      { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' }
+    )
+    if (res.ok) {
+      const j = await res.json()
+      data = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g, '')))))
+    }
   } catch {
-    cloudLoaded = false
-    // 云端不可达时仍以本地为准（离线兜底）
+    /* 回退站内文件 */
   }
+  if (!data) {
+    try {
+      const res = await fetch('./data/portfolio-data.json', { cache: 'no-store' })
+      if (!res.ok) throw new Error(`cloud file ${res.status}`)
+      data = await res.json()
+    } catch {
+      cloudLoaded = false
+      notifyCloud()
+      return
+    }
+  }
+  cloudEdits = data.edits && typeof data.edits === 'object' ? data.edits : {}
+  cloudImages = data.images && typeof data.images === 'object' ? data.images : {}
+  cloudLoaded = true
+  mergeAndNotify()
   notifyCloud()
 }
 
