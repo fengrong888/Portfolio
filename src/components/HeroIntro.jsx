@@ -39,7 +39,7 @@ export default function HeroIntro({ onDone }) {
       }
       const el = document.createElement('div')
       el.className = 'hero-intro__fx'
-      const size = Math.round(rand(110, 200))
+      const size = 160
       const offX = rand(-180, 180)
       const offY = rand(-130, 130)
       // 旋转跟随鼠标移动轨迹：轨迹方向角映射为图片旋转角度
@@ -71,12 +71,11 @@ export default function HeroIntro({ onDone }) {
       stage.appendChild(el)
       const item = { el, done: false }
       active.push(item)
-      // 入场：从鼠标中心由小到大缩放出现
-      requestAnimationFrame(() => {
-        el.style.transition = 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease-out'
-        el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(1)`
-        el.style.opacity = '1'
-      })
+      // 入场：从鼠标中心由小到大缩放出现（强制 reflow 确保过渡从初始态开始）
+      void el.offsetWidth
+      el.style.transition = 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease-out'
+      el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(1)`
+      el.style.opacity = '1'
       // 离场：由大到小缩放消失
       setTimeout(() => {
         if (item.done) return
