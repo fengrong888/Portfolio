@@ -1387,8 +1387,8 @@ textarea {
   overflow: hidden;
   cursor: pointer;
   transition:
-    opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 1.15s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .hero-intro--out {
   opacity: 0;
