@@ -42,6 +42,19 @@ function Shell() {
 export default function App() {
   // 开屏动画：每次打开网站（加载）先显示，点击任意处进入作品瀑布流
   const [intro, setIntro] = useState(true)
+  // 重播开屏时递增 key，强制重新挂载组件（重置鼠标动效）
+  const [introKey, setIntroKey] = useState(0)
+
+  const openIntro = () => {
+    setIntro(true)
+    setIntroKey((k) => k + 1)
+  }
+
+  useEffect(() => {
+    // 左上角 logo 点击 → 重播开屏首页动画（Nav 内派发 open-intro 事件）
+    window.addEventListener('open-intro', openIntro)
+    return () => window.removeEventListener('open-intro', openIntro)
+  }, [])
 
   useEffect(() => {
     if (!intro) return
@@ -110,7 +123,7 @@ export default function App() {
     <HashRouter>
       <ClickSpark sparkColor="#fff" sparkSize={10} sparkRadius={15} sparkCount={8} duration={420}>
         <Shell />
-        {intro && <HeroIntro onDone={() => setIntro(false)} />}
+        {intro && <HeroIntro key={introKey} onDone={() => setIntro(false)} />}
       </ClickSpark>
     </HashRouter>
   )

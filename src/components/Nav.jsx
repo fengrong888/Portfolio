@@ -67,7 +67,15 @@ export default function Nav() {
 
   return (
     <header className={`nav${scrolled ? ' scrolled' : ''}${intro ? ' intro' : ''}`}>
-      <Link to="/" className="nav__logo" aria-label="返回作品首页">
+      <Link
+        to="/"
+        className="nav__logo"
+        aria-label="返回作品首页"
+        onClick={() => {
+          // 点击左上角 logo → 重新进入开屏首页动画
+          window.dispatchEvent(new Event('open-intro'))
+        }}
+      >
         <span
           className="nav__logo-svg"
           dangerouslySetInnerHTML={{ __html: NAV_LOGO_SVG }}

@@ -1416,15 +1416,6 @@ textarea {
   color: rgba(244, 241, 234, 0.92);
   font-family: var(--font-body);
 }
-.hero-intro__hint {
-  position: absolute;
-  left: 6vw;
-  bottom: 7vh;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  color: rgba(244, 241, 234, 0.45);
-  pointer-events: none;
-}
 .hero-intro__fx {
   position: absolute;
   z-index: 2;
