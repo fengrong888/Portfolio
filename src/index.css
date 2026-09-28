@@ -1420,6 +1420,21 @@ textarea {
   opacity: 0;
   animation: heroTitleIn 1.25s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
 }
+@media (max-width: 640px) {
+  .hero-intro__title {
+    right: auto;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    top: 55%;
+    width: 100%;
+    text-align: center;
+  }
+  .hero-intro__title svg {
+    width: 76vw;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+}
 @keyframes heroTitleIn {
   0% {
     opacity: 0;

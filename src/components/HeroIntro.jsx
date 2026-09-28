@@ -37,14 +37,17 @@ export default function HeroIntro({ onDone }) {
     let lastX = null
     let lastY = null
 
+    const isMobile = window.innerWidth <= 640
+    const size = isMobile ? 118 : 180
+    const minStep = isMobile ? 62 : 88
+
     function spawn(x, y) {
       const el = document.createElement('div')
       el.className = 'hero-intro__fx'
-      const size = 180
-      // 固定步长：距上一张生成点 >= 88px 才生成 → 图片间距一致
+      // 固定步长：距上一张生成点 >= minStep 才生成 → 图片间距一致
       if (lastSpawnX !== null) {
         const dist = Math.hypot(x - lastSpawnX, y - lastSpawnY)
-        if (dist < 88) return
+        if (dist < minStep) return
       }
       lastSpawnX = x
       lastSpawnY = y
@@ -107,8 +110,13 @@ export default function HeroIntro({ onDone }) {
       lastY = e.clientY
     }
     const onTouch = (e) => {
+      const now = performance.now()
+      if (now - lastMove < 30) return
+      lastMove = now
       const t = e.touches[0]
       spawn(t.clientX, t.clientY)
+      lastX = t.clientX
+      lastY = t.clientY
     }
     window.addEventListener('mousemove', onMove, { passive: true })
     window.addEventListener('touchmove', onTouch, { passive: true })
