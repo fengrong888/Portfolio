@@ -1410,8 +1410,8 @@ textarea {
   pointer-events: none;
   line-height: 0.86;
   font-size: clamp(64px, 15.5vw, 260px);
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   color: rgba(244, 241, 234, 0.92);
   font-family: var(--font-body);

@@ -30,13 +30,6 @@ export default function HeroIntro({ onDone }) {
     let lastY = null
 
     function spawn(x, y) {
-      if (active.length >= 4) {
-        const old = active.shift()
-        old.el.style.transition = 'opacity 0.4s ease-in'
-        old.el.style.opacity = '0'
-        setTimeout(() => old.el.remove(), 400)
-        old.done = true
-      }
       const el = document.createElement('div')
       el.className = 'hero-intro__fx'
       const size = 160
