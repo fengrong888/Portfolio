@@ -1006,8 +1006,8 @@ textarea {
   /* 首页瀑布流：2 列紧凑展示 */
   .masonry { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 
-  /* 作品详情图片：加宽至 92%（保持原比例居中） */
-  .detail__figure { width: 92%; }
+  /* 作品详情图片：加宽至 97%（左右留白缩小，保持原比例居中） */
+  .detail__figure { width: 97%; }
   .detail__gallery { gap: 10px; }
 
   /* 关于我：横线 / 标题 / LOGO 墙加宽至 90% */
