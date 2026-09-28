@@ -125,7 +125,7 @@ export default function HeroIntro({ onDone }) {
     if (!stage) return
     const close = () => {
       stage.classList.add('hero-intro--out')
-      setTimeout(onDone, 1450)
+      setTimeout(onDone, 1150)
     }
     stage.addEventListener('click', close)
     return () => stage.removeEventListener('click', close)
