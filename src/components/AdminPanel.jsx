@@ -56,7 +56,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const onShots = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    const urls = await Promise.all(files.map((f) => compressImage(f, 2400, 0.92)))
+    const urls = await Promise.all(files.map((f) => compressImage(f, 3000, 1.0)))
     await putImage(`work-${id}-shots`, JSON.stringify(urls))
     setUpShots(true)
     setTimeout(() => setUpShots(false), 1500)
@@ -67,7 +67,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const onInsert = async (e, index) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const dataUrl = await compressImage(file, 2400, 0.92)
+    const dataUrl = await compressImage(file, 3000, 1.0)
     await insertShot(id, shots, index, dataUrl)
     if (insertRef.current) insertRef.current.value = ''
   }
