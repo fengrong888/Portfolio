@@ -1418,6 +1418,25 @@ textarea {
   white-space: nowrap;
   color: rgba(244, 241, 234, 0.92);
   font-family: var(--font-display);
+  padding-bottom: 0.1em;
+}
+.hero-intro__title span {
+  display: inline-block;
+  opacity: 0;
+  animation: heroTitleIn 1.25s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
+}
+@keyframes heroTitleIn {
+  0% {
+    opacity: 0;
+    transform: translateY(0.38em) scaleY(1.18);
+    clip-path: inset(0 0 100% 0);
+  }
+  55% { opacity: 1; }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+    clip-path: inset(0 0 0 0);
+  }
 }
 .hero-intro__fx {
   position: absolute;
