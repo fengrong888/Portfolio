@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Nav from './components/Nav'
 import Home from './components/Home'
@@ -9,6 +9,7 @@ import Footer from './components/Footer'
 import ClickSpark from './components/ClickSpark'
 import EditBar from './components/EditBar'
 import AdminPanel from './components/AdminPanel'
+import HeroIntro from './components/HeroIntro'
 import { loadStoredImages, loadCloud } from './lib/edits'
 import CursorDot from './components/CursorDot'
 
@@ -39,6 +40,31 @@ function Shell() {
 }
 
 export default function App() {
+  // 开屏动画：每次打开网站（加载）先显示，点击任意处进入作品瀑布流
+  const [intro, setIntro] = useState(true)
+
+  useEffect(() => {
+    if (!intro) return
+    const close = () => setIntro(false)
+    document.addEventListener('click', close, { once: true })
+    return () => document.removeEventListener('click', close)
+  }, [intro])
+
+  useEffect(() => {
+    // 开屏期间：锁定页面滚动 + 导航栏背景纯透明
+    if (intro) {
+      document.body.classList.add('intro-mode')
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.classList.remove('intro-mode')
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.classList.remove('intro-mode')
+      document.body.style.overflow = ''
+    }
+  }, [intro])
+
   useEffect(() => {
     // 加载后台上传的作品图片（IndexedDB 本地存储）
     loadStoredImages()
@@ -84,6 +110,7 @@ export default function App() {
     <HashRouter>
       <ClickSpark sparkColor="#fff" sparkSize={10} sparkRadius={15} sparkCount={8} duration={420}>
         <Shell />
+        {intro && <HeroIntro onDone={() => setIntro(false)} />}
       </ClickSpark>
     </HashRouter>
   )

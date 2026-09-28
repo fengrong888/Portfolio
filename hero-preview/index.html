@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio · 开屏首页动画预览</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: #0a0908;
+    color: #f2efe8;
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: crosshair;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+  }
+  /* 背景氛围：极淡的径向光晕，让黑不是死黑 */
+  #stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(46vw 46vw at 72% 42%, rgba(255, 244, 226, 0.055), transparent 70%),
+      radial-gradient(30vw 30vw at 18% 78%, rgba(255, 244, 226, 0.035), transparent 70%);
+    pointer-events: none;
+  }
+  /* 右侧巨型标题 */
+  .title {
+    position: absolute;
+    right: 6vw;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    text-align: right;
+    pointer-events: none;
+    line-height: 0.86;
+  }
+  .title .word {
+    display: block;
+    font-size: clamp(64px, 15.5vw, 260px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .title .word--fill { color: rgba(244, 241, 234, 0.92); }
+  /* 浮现图片 */
+  .fx {
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  .fx img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* 提示与说明 */
+  .hint {
+    position: absolute;
+    left: 6vw;
+    bottom: 7vh;
+    z-index: 4;
+    font-size: 13px;
+    letter-spacing: 0.16em;
+    color: rgba(244, 241, 234, 0.5);
+    line-height: 2;
+    pointer-events: none;
+  }
+  .hint strong { color: rgba(244, 241, 234, 0.85); font-weight: 500; }
+  .corner {
+    position: absolute;
+    right: 6vw;
+    bottom: 7vh;
+    z-index: 4;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: rgba(244, 241, 234, 0.34);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <div class="title" aria-hidden="true">
+    <span class="word word--fill">Portfolio</span>
+  </div>
+
+  <div class="hint">
+    <strong>开屏首页动画预览</strong><br />
+    移动鼠标 —— 作品依次浮现又消失
+  </div>
+  <div class="corner">效果满意后告诉我，即可应用到网站</div>
+
+<script>
+  // ---------- 开屏首页动画：鼠标移动 → 图片依次浮现又消失 ----------
+  const stage = document.getElementById('stage')
+  const IMG_COUNT = 20
+  const imgs = Array.from({ length: IMG_COUNT }, (_, i) => `../docs/works/work-${String(i + 1).padStart(2, '0')}.jpg`)
+
+  // 预加载全部封面（缓存，避免浮现时闪烁）
+  imgs.forEach((src) => {
+    const a = new Image()
+    a.src = src
+  })
+
+  let seq = 0          // 图片流序号
+  let lastMove = 0     // 上次触发时间
+  const active = []    // 当前屏幕上活跃的图片元素
+
+  const rand = (min, max) => min + Math.random() * (max - min)
+
+  function spawn(x, y) {
+    // 同一时刻最多 4 张，超出先移除最老的一张
+    if (active.length >= 4) {
+      const old = active.shift()
+      fadeOut(old.el)
+      old.done = true
+    }
+
+    const el = document.createElement('div')
+    el.className = 'fx'
+    const size = Math.round(rand(110, 200))
+    const offX = rand(-180, 180)
+    const offY = rand(-130, 130)
+    const rot = rand(-4.5, 4.5)
+
+    el.style.width = size + 'px'
+    el.style.height = Math.round(size * 4 / 3) + 'px'   // 3:4 封面
+    el.style.left = (x + offX) + 'px'
+    el.style.top = (y + offY) + 'px'
+    // 从鼠标中心的最小尺寸开始
+    el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(0.04)`
+    el.style.opacity = '0'
+    el.innerHTML = `<img src="${imgs[seq % IMG_COUNT]}" alt="" draggable="false" />`
+    stage.appendChild(el)
+
+    const item = { el, done: false }
+    active.push(item)
+
+    // 入场：以鼠标为中心从最小放大到正常
+    requestAnimationFrame(() => {
+      el.style.transition = 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease-out'
+      el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(1)`
+      el.style.opacity = '1'
+    })
+
+    // 停留后淡出：上移 + 微放大 + 淡出
+    setTimeout(() => {
+      if (item.done) return
+      el.style.transition = 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease-in'
+      el.style.transform = `translate(-50%, -58%) rotate(${rot}deg) scale(1.06)`
+      el.style.opacity = '0'
+      setTimeout(() => {
+        el.remove()
+        const idx = active.indexOf(item)
+        if (idx !== -1) active.splice(idx, 1)
+      }, 700)
+    }, 820)
+
+    seq++
+  }
+
+  function fadeOut(el) {
+    el.style.transition = 'opacity 0.4s ease-in'
+    el.style.opacity = '0'
+    setTimeout(() => el.remove(), 400)
+  }
+
+  // 鼠标移动：节流，每 ~110ms 浮现一张
+  window.addEventListener('mousemove', (e) => {
+    const now = performance.now()
+    if (now - lastMove < 210) return
+    lastMove = now
+    spawn(e.clientX, e.clientY)
+  })
+
+  // 触屏设备：轻触也触发一张（预览兼容）
+  window.addEventListener('touchmove', (e) => {
+    const t = e.touches[0]
+    spawn(t.clientX, t.clientY)
+  }, { passive: true })
+</script>
+</body>
+</html>

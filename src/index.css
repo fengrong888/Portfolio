@@ -1375,3 +1375,74 @@ textarea {
   font-size: 12px !important;
   color: rgba(220, 195, 148, 0.9) !important;
 }
+
+/* ============================================================
+   开屏首页动画（首次打开网站进入；点击进入作品瀑布流）
+   ============================================================ */
+.hero-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 80;                 /* 低于导航(100)，导航在开屏之上且背景纯透明 */
+  background: #0a0908;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hero-intro--out {
+  opacity: 0;
+  pointer-events: none;
+}
+.hero-intro::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(46vw 46vw at 72% 42%, rgba(255, 244, 226, 0.055), transparent 70%),
+    radial-gradient(30vw 30vw at 18% 78%, rgba(255, 244, 226, 0.035), transparent 70%);
+  pointer-events: none;
+}
+.hero-intro__title {
+  position: absolute;
+  right: 6vw;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: right;
+  pointer-events: none;
+  line-height: 0.86;
+  font-size: clamp(64px, 15.5vw, 260px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: rgba(244, 241, 234, 0.92);
+  font-family: var(--font-body);
+}
+.hero-intro__hint {
+  position: absolute;
+  left: 6vw;
+  bottom: 7vh;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: rgba(244, 241, 234, 0.45);
+  pointer-events: none;
+}
+.hero-intro__fx {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+.hero-intro__fx img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 开屏期间导航栏强制纯透明 */
+body.intro-mode .nav {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom-color: transparent;
+}
