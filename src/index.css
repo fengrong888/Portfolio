@@ -1414,7 +1414,7 @@ textarea {
   letter-spacing: 0.005em;
   white-space: nowrap;
   color: rgba(244, 241, 234, 0.92);
-  font-family: var(--font-body);
+  font-family: var(--font-display);
 }
 .hero-intro__fx {
   position: absolute;

@@ -97,7 +97,7 @@ export default function HeroIntro({ onDone }) {
 
     const onMove = (e) => {
       const now = performance.now()
-      if (now - lastMove < 60) return
+      if (now - lastMove < 50) return
       lastMove = now
       spawn(e.clientX, e.clientY)
       lastX = e.clientX
