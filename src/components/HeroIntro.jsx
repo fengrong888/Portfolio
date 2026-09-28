@@ -42,7 +42,7 @@ export default function HeroIntro({ onDone }) {
       el.className = 'hero-intro__fx'
       const size = 180
       // 若鼠标仍停留在上一张的生成点附近，跳过本次（避免同位置堆积）
-      if (lastSpawnX !== null && Math.abs(x - lastSpawnX) < 50 && Math.abs(y - lastSpawnY) < 50) return
+      if (lastSpawnX !== null && Math.abs(x - lastSpawnX) < 24 && Math.abs(y - lastSpawnY) < 24) return
       lastSpawnX = x
       lastSpawnY = y
       const offX = 0
@@ -97,7 +97,7 @@ export default function HeroIntro({ onDone }) {
 
     const onMove = (e) => {
       const now = performance.now()
-      if (now - lastMove < 50) return
+      if (now - lastMove < 30) return
       lastMove = now
       spawn(e.clientX, e.clientY)
       lastX = e.clientX
