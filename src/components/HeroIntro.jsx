@@ -21,10 +21,14 @@ export default function HeroIntro({ onDone }) {
       lastIdx = idx
       return covers[idx]
     }
-    // 预加载全部封面到浏览器缓存，移动时直接复用已解码图片（更丝滑）
+    // 预加载全部封面并解码，移动时直接复用已就绪图片（零延迟浮现）
+    const ready = new Map()
     covers.forEach((src) => {
       const im = new Image()
+      im.decoding = 'async'
       im.src = src
+      im.decode().catch(() => {})
+      ready.set(src, im)
     })
 
     const rand = (min, max) => min + Math.random() * (max - min)
@@ -74,19 +78,29 @@ export default function HeroIntro({ onDone }) {
       el.style.top = y + offY + 'px'
       el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(0.04)`
       el.style.opacity = '0'
-      const img = document.createElement('img')
-      img.src = pick()
+      const src = pick()
+      const cached = ready.get(src)
+      const img = cached && cached.complete ? cached.cloneNode(false) : document.createElement('img')
+      img.src = src
       img.alt = ''
       img.draggable = false
       el.appendChild(img)
       stage.appendChild(el)
       const item = { el, done: false }
       active.push(item)
-      // 入场：从鼠标中心由小到大缩放出现（强制 reflow 确保过渡从初始态开始）
-      void el.offsetWidth
-      el.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease-out'
-      el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(1)`
-      el.style.opacity = '1'
+      const startIn = () => {
+        if (item.done) return
+        // 入场：从鼠标中心由小到大缩放出现（强制 reflow 确保过渡从初始态开始）
+        void el.offsetWidth
+        el.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease-out'
+        el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(1)`
+        el.style.opacity = '1'
+      }
+      if (cached && cached.complete) {
+        startIn()
+      } else {
+        img.decode().then(startIn).catch(startIn)
+      }
       // 离场：由大到小缩放消失
       setTimeout(() => {
         if (item.done) return
