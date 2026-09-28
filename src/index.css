@@ -1407,21 +1407,16 @@ textarea {
 .hero-intro__title {
   position: absolute;
   right: 6vw;
-  top: 50%;
+  top: 57%;
   transform: translateY(-50%);
   text-align: right;
   pointer-events: none;
-  line-height: 0.86;
-  font-size: clamp(72px, 18vw, 300px);
-  font-weight: 400;
-  letter-spacing: 0.005em;
-  white-space: nowrap;
-  color: rgba(244, 241, 234, 0.92);
-  font-family: 'Anton', var(--font-display);
-  padding-bottom: 0.1em;
 }
-.hero-intro__title span {
-  display: inline-block;
+.hero-intro__title svg {
+  display: block;
+  width: clamp(380px, 50vw, 860px);
+  height: auto;
+  overflow: visible;
   opacity: 0;
   animation: heroTitleIn 1.25s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
 }
