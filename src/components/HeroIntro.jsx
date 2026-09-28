@@ -28,15 +28,11 @@ export default function HeroIntro({ onDone }) {
     })
 
     const rand = (min, max) => min + Math.random() * (max - min)
-    // 固定偏移点（围绕鼠标均匀分布），循环取用 → 图片间距保持一致
-    const OFFSETS = [
-      [-140, -110], [-70, -135], [0, -145], [70, -135], [140, -110],
-      [-140, 95], [-70, 115], [0, 125], [70, 115], [140, 95],
-    ]
-    let offIdx = 0
-    const usedOffsets = new Set()
     const active = []
     let lastMove = 0
+    // 上一张生成时的鼠标位置（用于防止同一点重复生成堆积）
+    let lastSpawnX = null
+    let lastSpawnY = null
     // 记录上一次鼠标位置，用于计算移动轨迹方向 → 图片旋转跟随
     let lastX = null
     let lastY = null
@@ -45,17 +41,12 @@ export default function HeroIntro({ onDone }) {
       const el = document.createElement('div')
       el.className = 'hero-intro__fx'
       const size = 180
-      // 找一个空闲的偏移点；全部占用则跳过本次（避免图片堆积）
-      let idx = offIdx
-      let guard = 0
-      while (usedOffsets.has(idx) && guard < OFFSETS.length) {
-        idx = (idx + 1) % OFFSETS.length
-        guard++
-      }
-      if (guard >= OFFSETS.length) return
-      offIdx = (idx + 1) % OFFSETS.length
-      usedOffsets.add(idx)
-      const [offX, offY] = OFFSETS[idx]
+      // 若鼠标仍停留在上一张的生成点附近，跳过本次（避免同位置堆积）
+      if (lastSpawnX !== null && Math.abs(x - lastSpawnX) < 50 && Math.abs(y - lastSpawnY) < 50) return
+      lastSpawnX = x
+      lastSpawnY = y
+      const offX = 0
+      const offY = 0
       // 旋转跟随鼠标移动轨迹：轨迹方向角映射为图片旋转角度（幅度减小）
       let rot = 0
       if (lastX !== null && lastY !== null) {
@@ -100,7 +91,6 @@ export default function HeroIntro({ onDone }) {
           el.remove()
           const i = active.indexOf(item)
           if (i !== -1) active.splice(i, 1)
-          usedOffsets.delete(idx)
         }, 480)
       }, 600)
     }
