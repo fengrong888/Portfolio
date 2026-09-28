@@ -1417,7 +1417,7 @@ textarea {
   letter-spacing: 0.005em;
   white-space: nowrap;
   color: rgba(244, 241, 234, 0.92);
-  font-family: var(--font-display);
+  font-family: 'Anton', var(--font-display);
   padding-bottom: 0.1em;
 }
 .hero-intro__title span {
