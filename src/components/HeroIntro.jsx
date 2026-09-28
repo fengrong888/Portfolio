@@ -32,7 +32,7 @@ export default function HeroIntro({ onDone }) {
     function spawn(x, y) {
       const el = document.createElement('div')
       el.className = 'hero-intro__fx'
-      const size = 160
+      const size = 180
       const offX = rand(-180, 180)
       const offY = rand(-130, 130)
       // 旋转跟随鼠标移动轨迹：轨迹方向角映射为图片旋转角度
@@ -85,7 +85,7 @@ export default function HeroIntro({ onDone }) {
 
     const onMove = (e) => {
       const now = performance.now()
-      if (now - lastMove < 120) return
+      if (now - lastMove < 60) return
       lastMove = now
       spawn(e.clientX, e.clientY)
       lastX = e.clientX
