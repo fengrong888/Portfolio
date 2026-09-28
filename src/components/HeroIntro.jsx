@@ -41,8 +41,11 @@ export default function HeroIntro({ onDone }) {
       const el = document.createElement('div')
       el.className = 'hero-intro__fx'
       const size = 180
-      // 若鼠标仍停留在上一张的生成点附近，跳过本次（避免同位置堆积）
-      if (lastSpawnX !== null && Math.abs(x - lastSpawnX) < 24 && Math.abs(y - lastSpawnY) < 24) return
+      // 固定步长：距上一张生成点 >= 44px 才生成 → 图片间距一致
+      if (lastSpawnX !== null) {
+        const dist = Math.hypot(x - lastSpawnX, y - lastSpawnY)
+        if (dist < 44) return
+      }
       lastSpawnX = x
       lastSpawnY = y
       const offX = 0
@@ -122,7 +125,7 @@ export default function HeroIntro({ onDone }) {
     if (!stage) return
     const close = () => {
       stage.classList.add('hero-intro--out')
-      setTimeout(onDone, 650)
+      setTimeout(onDone, 720)
     }
     stage.addEventListener('click', close)
     return () => stage.removeEventListener('click', close)

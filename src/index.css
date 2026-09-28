@@ -1386,10 +1386,13 @@ textarea {
   background: #0a0908;
   overflow: hidden;
   cursor: pointer;
-  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .hero-intro--out {
   opacity: 0;
+  transform: translateY(-100%);
   pointer-events: none;
 }
 .hero-intro::before {
