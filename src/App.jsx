@@ -58,8 +58,12 @@ export default function App() {
 
   useEffect(() => {
     if (!intro) return
-    const close = () => setIntro(false)
-    document.addEventListener('click', close, { once: true })
+    const close = (e) => {
+      // 点击左上角 logo（重播开屏）不关闭开屏
+      if (e.target instanceof Element && e.target.closest('.nav__logo')) return
+      setIntro(false)
+    }
+    document.addEventListener('click', close)
     return () => document.removeEventListener('click', close)
   }, [intro])
 

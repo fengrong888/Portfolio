@@ -78,7 +78,7 @@ export default function HeroIntro({ onDone }) {
       active.push(item)
       // 入场：从鼠标中心由小到大缩放出现（强制 reflow 确保过渡从初始态开始）
       void el.offsetWidth
-      el.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease-out'
+      el.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease-out'
       el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(1)`
       el.style.opacity = '1'
       // 离场：由大到小缩放消失
