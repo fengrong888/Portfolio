@@ -693,18 +693,14 @@ dl, dd { margin: 0; }
 .contact__mail-row {
   display: inline-flex;
   align-items: center;
-  gap: clamp(12px, 1.4vw, 20px);
+  gap: var(--ico-gap, clamp(12px, 1.4vw, 20px));
+  position: relative;
 }
 .contact__ico {
-  width: clamp(22px, 2.4vw, 34px);
-  height: clamp(22px, 2.4vw, 34px);
+  width: var(--ico, clamp(22px, 2.4vw, 34px));
+  height: var(--ico, clamp(22px, 2.4vw, 34px));
   flex: none;
   opacity: 0.9;
-  transition: transform 0.45s var(--ease), opacity 0.45s var(--ease);
-}
-.contact__mail:hover .contact__ico {
-  transform: translateY(-2px);
-  opacity: 1;
 }
 .contact__mail {
   display: inline-grid;
@@ -746,9 +742,15 @@ dl, dd { margin: 0; }
   100% { opacity: 1; transform: translateY(0); clip-path: inset(0 0 0 0); }
 }
 .contact__copied {
+  position: absolute;
+  left: calc(var(--ico, clamp(22px, 2.4vw, 34px)) + var(--ico-gap, clamp(12px, 1.4vw, 20px)));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
   color: var(--accent-bright);
   background: var(--bg, #12100e);
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .contact__socials {
@@ -1020,7 +1022,7 @@ textarea {
    ============================================================ */
 @media (max-width: 560px) {
   /* 联系页图标：手机端缩小并保持对齐 */
-  .contact__mail-row { gap: 10px; }
+  .contact__mail-row { --ico-gap: 10px; --ico: 20px; }
   .contact__ico { width: 20px; height: 20px; }
   /* 首页瀑布流：2 列紧凑展示，左右留白缩小（16px → 8px） */
   .home { padding-inline: 8px; }
