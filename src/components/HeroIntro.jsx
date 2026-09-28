@@ -21,6 +21,11 @@ export default function HeroIntro({ onDone }) {
       lastIdx = idx
       return covers[idx]
     }
+    // 预加载全部封面到浏览器缓存，移动时直接复用已解码图片（更丝滑）
+    covers.forEach((src) => {
+      const im = new Image()
+      im.src = src
+    })
 
     const rand = (min, max) => min + Math.random() * (max - min)
     // 固定偏移点（围绕鼠标均匀分布），循环取用 → 图片间距保持一致
@@ -29,6 +34,7 @@ export default function HeroIntro({ onDone }) {
       [-140, 95], [-70, 115], [0, 125], [70, 115], [140, 95],
     ]
     let offIdx = 0
+    const usedOffsets = new Set()
     const active = []
     let lastMove = 0
     // 记录上一次鼠标位置，用于计算移动轨迹方向 → 图片旋转跟随
@@ -39,7 +45,17 @@ export default function HeroIntro({ onDone }) {
       const el = document.createElement('div')
       el.className = 'hero-intro__fx'
       const size = 180
-      const [offX, offY] = OFFSETS[offIdx++ % OFFSETS.length]
+      // 找一个空闲的偏移点；全部占用则跳过本次（避免图片堆积）
+      let idx = offIdx
+      let guard = 0
+      while (usedOffsets.has(idx) && guard < OFFSETS.length) {
+        idx = (idx + 1) % OFFSETS.length
+        guard++
+      }
+      if (guard >= OFFSETS.length) return
+      offIdx = (idx + 1) % OFFSETS.length
+      usedOffsets.add(idx)
+      const [offX, offY] = OFFSETS[idx]
       // 旋转跟随鼠标移动轨迹：轨迹方向角映射为图片旋转角度（幅度减小）
       let rot = 0
       if (lastX !== null && lastY !== null) {
@@ -84,6 +100,7 @@ export default function HeroIntro({ onDone }) {
           el.remove()
           const i = active.indexOf(item)
           if (i !== -1) active.splice(i, 1)
+          usedOffsets.delete(idx)
         }, 480)
       }, 600)
     }
