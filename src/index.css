@@ -690,6 +690,9 @@ dl, dd { margin: 0; }
   color: var(--ink-dim);
 }
 
+.contact__mail-text {
+  transition: opacity 0.25s ease;
+}
 .contact__mail-row {
   display: inline-flex;
   align-items: center;
@@ -753,9 +756,13 @@ dl, dd { margin: 0; }
   transform: translateY(-50%);
   z-index: 2;
   color: var(--accent-bright);
-  background: var(--bg, #12100e);
   white-space: nowrap;
   line-height: 1.2;
+  animation: copiedFade 0.5s ease both;
+}
+@keyframes copiedFade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
 .contact__socials {

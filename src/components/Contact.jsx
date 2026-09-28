@@ -57,7 +57,7 @@ export default function Contact() {
         >
           <span className="contact__mail-row">
             {mailIco}
-            <span className="contact__mail-text"><Editable k="contact-mail" fallback="1205898527@qq.com" /></span>
+            <span className="contact__mail-text" style={{ opacity: copied === 'mail-1' ? 0 : 1 }}><Editable k="contact-mail" fallback="1205898527@qq.com" /></span>
             {copied === 'mail-1' && <span className="contact__copied">已复制</span>}
           </span>
         </button>
@@ -70,7 +70,7 @@ export default function Contact() {
         >
           <span className="contact__mail-row">
             {phoneIco}
-            <span className="contact__mail-text"><Editable k="contact-mail-2" fallback="183 1738 9976" /></span>
+            <span className="contact__mail-text" style={{ opacity: copied === 'mail-2' ? 0 : 1 }}><Editable k="contact-mail-2" fallback="183 1738 9976" /></span>
             {copied === 'mail-2' && <span className="contact__copied">已复制</span>}
           </span>
         </button>
