@@ -61,6 +61,8 @@ export default function App() {
     const close = (e) => {
       // 点击左上角 logo（重播开屏）不关闭开屏
       if (e.target instanceof Element && e.target.closest('.nav__logo')) return
+      // 点击开屏自身 → 由 HeroIntro 播放向上滑动退出后回调 onDone，这里不干预
+      if (e.target instanceof Element && e.target.closest('.hero-intro')) return
       setIntro(false)
     }
     document.addEventListener('click', close)
