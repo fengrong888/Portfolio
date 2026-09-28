@@ -701,6 +701,11 @@ dl, dd { margin: 0; }
   height: var(--ico, clamp(22px, 2.4vw, 34px));
   flex: none;
   opacity: 0.9;
+  transition: transform 0.45s var(--ease), opacity 0.45s var(--ease);
+}
+.contact__mail:hover .contact__ico {
+  transform: translateY(-2px);
+  opacity: 1;
 }
 .contact__mail {
   display: inline-grid;
