@@ -414,6 +414,9 @@ dl, dd { margin: 0; }
   animation: lede-row-in 0.8s var(--ease-out-expo) both;
   animation-delay: calc(var(--i) * 0.09s);
 }
+.detail__lede-en {
+  text-transform: uppercase;
+}
 @keyframes lede-row-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

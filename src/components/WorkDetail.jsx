@@ -1,20 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useWorks } from '../lib/edits'
 import { observeIn, unobserveIn } from '../lib/motion'
 import Editable from './Editable'
-
-// 逐字上浮转金：把文字拆成单字，悬浮时依次弹跳并转金色
-function LetterUp({ text }) {
-  const chars = Array.from(text)
-  return (
-    <span className="lu" aria-label={text}>
-      {chars.map((ch, i) => (
-        <span className="lu__c" key={i} style={{ '--i': i }}>{ch}</span>
-      ))}
-    </span>
-  )
-}
 
 // 作品详情：整屏铺满的图片画廊，向下滚动浏览。
 // 每张图以自下而上的揭幕入场。支持 Esc 返回、←/→ 切换。
@@ -62,9 +50,9 @@ export default function WorkDetail() {
   if (!work) {
     return (
       <main className="detail">
-        <header className="detail__bar">
-          <Link to="/" className="detail__back mono"><LetterUp text="返回作品" /></Link>
-        </header>
+        <div className="detail__empty" style={{ paddingTop: 'var(--nav-h)' }}>
+          该作品详情图片尚未提供——请在管理面板编辑后导出数据发回，或直接提供图片压缩包。
+        </div>
       </main>
     )
   }
@@ -78,13 +66,6 @@ export default function WorkDetail() {
           该作品详情图片尚未提供——请在管理面板编辑后导出数据发回，或直接提供图片压缩包。
         </div>
       )}
-      <header className="detail__bar">
-        <Link to="/" className="detail__back mono"><LetterUp text="返回作品" /></Link>
-        <div className="detail__nav">
-          <Link to={`/work/${prev.id}`} className="detail__arrow mono" aria-label="上一个作品"><LetterUp text="上一个" /></Link>
-          <Link to={`/work/${next.id}`} className="detail__arrow mono" aria-label="下一个作品"><LetterUp text="下一个" /></Link>
-        </div>
-      </header>
 
       <div className="detail__lede">
         <div className="detail__lede-row" style={{ '--i': 0 }}>
@@ -94,7 +75,7 @@ export default function WorkDetail() {
           <Editable k={`work-${work.id}-title`} fallback={work.title} />
         </div>
         {work.en && (
-          <div className="detail__lede-row" style={{ '--i': 2 }}>
+          <div className="detail__lede-row detail__lede-en" style={{ '--i': 2 }}>
             <Editable k={`work-${work.id}-en`} fallback={work.en} />
           </div>
         )}

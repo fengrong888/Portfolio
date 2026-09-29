@@ -23,7 +23,7 @@ function Shell() {
 
   return (
     <>
-      {!isDetail && <Nav />}
+      <Nav />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/work/:id" element={<WorkDetail />} />
