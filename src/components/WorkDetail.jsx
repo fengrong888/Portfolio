@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useWorks } from '../lib/edits'
 import { observeIn, unobserveIn } from '../lib/motion'
+import Editable from './Editable'
 
 // 逐字上浮转金：把文字拆成单字，悬浮时依次弹跳并转金色
 function LetterUp({ text }) {
@@ -86,9 +87,22 @@ export default function WorkDetail() {
       </header>
 
       <div className="detail__gallery">
-        {shots.map((s) => (
-          <DetailFigure key={s} src={s} alt={work.title} />
-        ))}
+        {shots.map((s, i) =>
+          i === 0 ? (
+            <div className="detail__figure-holder" key={s}>
+              <DetailFigure src={s} alt={work.title} />
+              <div className="detail__lede">
+                <p className="detail__lede-cat mono"><Editable k={`work-${work.id}-cat`} fallback={work.cat} /></p>
+                <h2 className="detail__lede-title"><Editable k={`work-${work.id}-title`} fallback={work.title} /></h2>
+                {work.en && (
+                  <p className="detail__lede-en mono"><Editable k={`work-${work.id}-en`} fallback={work.en} /></p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <DetailFigure key={s} src={s} alt={work.title} />
+          )
+        )}
       </div>
     </main>
   )

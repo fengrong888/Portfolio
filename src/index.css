@@ -387,6 +387,46 @@ dl, dd { margin: 0; }
   clip-path: inset(0 0 100% 0);
   transition: clip-path 1.15s var(--ease-out-expo);
 }
+
+/* 首图封面信息区：叠加在首图上、左对齐（红框区域） */
+.detail__figure-holder {
+  position: relative;
+  width: 62%;
+  margin: 0;
+}
+.detail__figure-holder .detail__figure { width: 100%; }
+.detail__lede {
+  position: absolute;
+  top: 20%;
+  left: 5%;
+  z-index: 2;
+  max-width: 46%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+.detail__lede-cat {
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(19, 17, 16, 0.66);
+}
+.detail__lede-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(28px, 3.6vw, 58px);
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+  color: #131110;
+}
+.detail__lede-en {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(19, 17, 16, 0.55);
+}
 .detail__figure.in { clip-path: inset(0 0 0 0); }
 
 .detail__img {
