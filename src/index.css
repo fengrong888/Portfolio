@@ -4,6 +4,14 @@
    ============================================================ */
 
 /* ---------- tokens ---------- */
+/* 阿里妈妈方圆体 VF（免费商用，可变字体）—— 首屏大字用字体渲染达到系统级锐度 */
+@font-face {
+  font-family: 'AlimamaFangYuanTiVF';
+  src: url('./assets/fonts/AlimamaFangYuanTiVF.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   --canvas: #131110;            /* 暖炭底（非纯黑，L≈8） */
   --canvas-2: #0F0E0D;          /* 更深的入场底 */
@@ -1440,17 +1448,25 @@ textarea {
 }
 .hero-intro__title {
   position: absolute;
-  right: 6vw;
-  top: 57%;
+  left: 0;
+  right: 0;
+  top: 50%;
   transform: translateY(-50%);
-  text-align: right;
+  text-align: center;
   pointer-events: none;
 }
-.hero-intro__title svg {
+.hero-intro__title .hero-intro__wordmark {
   display: block;
-  width: clamp(380px, 50vw, 860px);
-  height: auto;
-  overflow: visible;
+  font-family: 'AlimamaFangYuanTiVF', var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'wght' 700, 'BEVL' 1;
+  text-transform: uppercase;
+  font-size: clamp(84px, 13vw, 240px);
+  letter-spacing: 0.01em;
+  line-height: 0.92;
+  color: #f4f1ea;
+  text-align: center;
+  white-space: nowrap;
   opacity: 0;
   animation: heroTitleIn 1.25s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
 }
@@ -1459,14 +1475,14 @@ textarea {
     right: auto;
     left: 50%;
     transform: translate(-50%, -50%);
-    top: 55%;
+    top: 50%;
     width: 100%;
     text-align: center;
   }
-  .hero-intro__title svg {
-    width: 76vw;
-    max-width: 380px;
-    margin: 0 auto;
+  .hero-intro__title .hero-intro__wordmark {
+    font-size: clamp(44px, 14.5vw, 96px);
+    letter-spacing: 0.01em;
+    text-align: center;
   }
 }
 @keyframes heroTitleIn {
