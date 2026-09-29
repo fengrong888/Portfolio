@@ -147,7 +147,7 @@ dl, dd { margin: 0; }
   padding: 6px 0;
   font-family: var(--font-mono);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.18em;
   color: var(--ink-dim);
   transition: color 0.3s;
@@ -403,10 +403,10 @@ dl, dd { margin: 0; }
 .detail__lede-row {
   font-family: var(--font-mono);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.18em;
   line-height: 1.7;
-  color: var(--ink-dim);
+  color: #ffffff;
   padding: 9px 0;
   border-bottom: 1px solid rgba(244, 241, 234, 0.2);
   white-space: normal;
