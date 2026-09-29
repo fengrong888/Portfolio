@@ -1027,11 +1027,17 @@ textarea {
   75% { transform: translateY(-5px); }
 }
 
-/* 导航按钮：逐字上浮转金（正常浏览逐字，编辑模式切回可编辑整词） */
+/* 导航按钮：逐字上浮转金（幅度加大版，独立 keyframes 不影响详情页按钮） */
+@keyframes lu-up-nav {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-24px); }
+  55% { transform: translateY(0); }
+  75% { transform: translateY(-9px); }
+}
 .nav__l { display: inline-block; will-change: transform; transition: color 0.25s; }
 .nav__link:hover .nav__l {
   color: var(--accent-bright);
-  animation: lu-up 0.62s cubic-bezier(.36,.07,.19,.97) both;
+  animation: lu-up-nav 0.62s cubic-bezier(.36,.07,.19,.97) both;
   animation-delay: calc(var(--i) * 0.06s);
 }
 
