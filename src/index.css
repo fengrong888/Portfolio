@@ -402,13 +402,15 @@ dl, dd { margin: 0; }
 }
 .detail__lede-row {
   font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  line-height: 1.6;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  line-height: 1.7;
   color: #f4f1ea;
   padding: 9px 0;
   border-bottom: 1px solid rgba(244, 241, 234, 0.2);
+  white-space: normal;
+  overflow-wrap: break-word;
   animation: lede-row-in 0.8s var(--ease-out-expo) both;
   animation-delay: calc(var(--i) * 0.09s);
 }

@@ -40,8 +40,11 @@ function Shell() {
 }
 
 export default function App() {
-  // 开屏动画：每次打开网站（加载）先显示，点击任意处进入作品瀑布流
-  const [intro, setIntro] = useState(true)
+  // 开屏动画：打开网站（无具体页面的 hash）先显示；刷新停留在当前页（如 #/work/3、#/about）则直接进入该页
+  const [intro, setIntro] = useState(() => {
+    const h = window.location.hash || ''
+    return !h || h === '#' || h === '#/'
+  })
   // 重播开屏时递增 key，强制重新挂载组件（重置鼠标动效）
   const [introKey, setIntroKey] = useState(0)
 
