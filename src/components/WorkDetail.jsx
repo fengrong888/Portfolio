@@ -86,23 +86,24 @@ export default function WorkDetail() {
         </div>
       </header>
 
-      <div className="detail__gallery">
-        {shots.map((s, i) =>
-          i === 0 ? (
-            <div className="detail__figure-holder" key={s}>
-              <DetailFigure src={s} alt={work.title} />
-              <div className="detail__lede">
-                <p className="detail__lede-cat mono"><Editable k={`work-${work.id}-cat`} fallback={work.cat} /></p>
-                <h2 className="detail__lede-title"><Editable k={`work-${work.id}-title`} fallback={work.title} /></h2>
-                {work.en && (
-                  <p className="detail__lede-en mono"><Editable k={`work-${work.id}-en`} fallback={work.en} /></p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <DetailFigure key={s} src={s} alt={work.title} />
-          )
+      <div className="detail__lede">
+        <div className="detail__lede-row" style={{ '--i': 0 }}>
+          <Editable k={`work-${work.id}-cat`} fallback={work.cat} />
+        </div>
+        <div className="detail__lede-row" style={{ '--i': 1 }}>
+          <Editable k={`work-${work.id}-title`} fallback={work.title} />
+        </div>
+        {work.en && (
+          <div className="detail__lede-row" style={{ '--i': 2 }}>
+            <Editable k={`work-${work.id}-en`} fallback={work.en} />
+          </div>
         )}
+      </div>
+
+      <div className="detail__gallery">
+        {shots.map((s) => (
+          <DetailFigure key={s} src={s} alt={work.title} />
+        ))}
       </div>
     </main>
   )

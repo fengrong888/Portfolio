@@ -388,46 +388,33 @@ dl, dd { margin: 0; }
   transition: clip-path 1.15s var(--ease-out-expo);
 }
 
-/* 首图封面信息区：位于首图左侧深色空白区域（不叠加图片），白字 */
-.detail__figure-holder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(28px, 5vw, 80px);
-  width: 100%;
-  padding-inline: var(--gut);
-  margin: 0;
-}
-.detail__figure-holder .detail__figure { width: 62%; flex-shrink: 0; }
+/* 首图封面信息区：页面最左侧顶部（返回作品正下方、左对齐），三行同字号、横线隔开 */
 .detail__lede {
-  flex-shrink: 0;
-  order: -1;
-  width: clamp(200px, 22vw, 340px);
-  text-align: left;
+  position: fixed;
+  top: calc(var(--nav-h) + 14px);
+  left: var(--gut);
+  z-index: 5;
+  width: clamp(150px, 12.5vw, 240px);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  text-align: left;
   color: #f4f1ea;
 }
-.detail__lede-cat {
-  font-size: 11px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.62);
-}
-.detail__lede-title {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(26px, 3.2vw, 52px);
-  line-height: 1.1;
-  letter-spacing: 0.02em;
+.detail__lede-row {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
   color: #f4f1ea;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(244, 241, 234, 0.2);
+  animation: lede-row-in 0.8s var(--ease-out-expo) both;
+  animation-delay: calc(var(--i) * 0.09s);
 }
-.detail__lede-en {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.55);
+@keyframes lede-row-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .detail__figure.in { clip-path: inset(0 0 0 0); }
 
@@ -1096,18 +1083,13 @@ textarea {
   /* 作品详情图片：加宽至 97%（左右留白缩小，保持原比例居中） */
   .detail__figure { width: 97%; }
   .detail__gallery { gap: 10px; }
-  /* 手机端：封面信息区改为上下排列（文字在上、图在下），白字 */
-  .detail__figure-holder {
-    flex-direction: column;
-    gap: 18px;
-    padding-inline: 8px;
-  }
-  .detail__figure-holder .detail__figure { width: 100%; }
+  /* 手机端：左侧信息区改为正常流置于图片上方 */
   .detail__lede {
-    width: 100%;
-    gap: 8px;
+    position: static;
+    width: calc(100vw - 16px);
+    padding: 0 8px;
+    margin-top: var(--nav-h);
   }
-  .detail__lede-title { font-size: clamp(22px, 6vw, 34px); }
 
   /* 关于我：横线 / 标题 / LOGO 墙加宽至 90% */
   .about__rule-top, .about__rule-bottom { width: 90vw; margin-inline: 5vw; }
