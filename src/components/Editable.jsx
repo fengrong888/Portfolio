@@ -11,7 +11,8 @@ export default function Editable({
   as: Tag = 'span',
   multiline = false,
   className,
-  children
+  children,
+  format
 }) {
   const value = useEdit(k, fallback)
   const editing = useEditing()
@@ -94,7 +95,7 @@ export default function Editable({
 
   return (
     <Tag ref={ref} data-edit="1" className={className} onPointerDown={beginEdit}>
-      {children ?? value}
+      {children ?? (typeof format === 'function' ? format(value) : value)}
     </Tag>
   )
 }

@@ -2,6 +2,14 @@ import { useEffect, useRef } from 'react'
 import { observeIn, unobserveIn } from '../lib/motion'
 import Editable from './Editable'
 
+// 数字（含日期点号）用阿里妈妈方圆体直角、其余文字保持导航栏字体
+function fyMix(text) {
+  return String(text)
+    .split(/([\d.]+)/g)
+    .filter(Boolean)
+    .map((p, i) => (/^[\d.]+$/.test(p) ? <span className="fy" key={i}>{p}</span> : p))
+}
+
 /* 关于我：按用户新参考图版式（7633×10606）实现首屏
    左：证件照（宽 24.5vw，占页面比例与参考图一致）
    右：7 行信息（从页宽 61.5% 起，宽 19.5vw，纵向 27%~100% 人像高）
@@ -29,19 +37,19 @@ export default function About() {
             <Editable k="about-name" fallback="冯  嵘" />
           </h2>
           <p className="about__dob st" style={{ '--d': '90ms' }}>
-            <Editable k="about-dob" fallback="1 9 9 6 . 8 . 2 7" />
+            <Editable k="about-dob" fallback="1 9 9 6 . 8 . 2 7" format={fyMix} />
           </p>
           <p className="about__skill st" style={{ '--d': '160ms' }}>
             <Editable k="about-skill" fallback="擅长品牌设计、包装设计、字体设计" />
           </p>
           <p className="about__edu st" style={{ '--d': '230ms' }}>
-            <Editable k="about-edu" fallback="2017年毕业于河南工业大学" />
+            <Editable k="about-edu" fallback="2017年毕业于河南工业大学" format={fyMix} />
           </p>
           <p className="about__edu-sub st" style={{ '--d': '300ms' }}>
             <Editable k="about-edu2" fallback="本科  电脑艺术设计" />
           </p>
           <p className="about__c-years st" style={{ '--d': '370ms' }}>
-            <Editable k="about-career-years" fallback="2019年 至 2026年" />
+            <Editable k="about-career-years" fallback="2019年 至 2026年" format={fyMix} />
           </p>
           <p className="about__c-role st" style={{ '--d': '430ms' }}>
             <Editable k="about-career-role" fallback="在千和智汇担任品牌设计师" />

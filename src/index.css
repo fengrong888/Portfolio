@@ -615,8 +615,15 @@ dl, dd { margin: 0; }
 .about__edu-sub,
 .about__c-years,
 .about__c-role {
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
   font-weight: 400;
+}
+
+/* 关于我页数字：阿里妈妈方圆体 直角（常规字重） */
+.about .fy {
+  font-family: 'AlimamaFangYuanTiVF', var(--font-mono);
+  font-weight: 400;
+  font-variation-settings: 'wght' 400, 'BEVL' 1;
 }
 
 .about__name {
@@ -738,6 +745,9 @@ dl, dd { margin: 0; }
 
 .contact__mail-text {
   transition: opacity 0.25s ease;
+  font-family: 'AlimamaFangYuanTiVF', var(--font-mono);
+  font-weight: 400;
+  font-variation-settings: 'wght' 400, 'BEVL' 1;
 }
 .contact__mail-row {
   display: inline-flex;
