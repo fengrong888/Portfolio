@@ -141,6 +141,20 @@ export default function HeroIntro({ onDone }) {
     }
   }, [works])
 
+  // 进场动效播放完后彻底移除 animation，字标回到纯静态矢量渲染（无合成层残留，最锐利）
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return
+    const t = window.setTimeout(() => {
+      const svg = stage.querySelector('.hero-intro__title svg')
+      if (svg) {
+        svg.style.animation = 'none'
+        svg.style.opacity = '1'
+      }
+    }, 1650)
+    return () => window.clearTimeout(t)
+  }, [])
+
   // 点击开屏（含导航栏区域）→ 淡出后进入作品瀑布流
   useEffect(() => {
     const stage = stageRef.current
