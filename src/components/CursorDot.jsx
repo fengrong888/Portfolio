@@ -9,6 +9,11 @@ export default function CursorDot() {
   useEffect(() => {
     const dot = ref.current
     if (!dot) return
+    // 触摸设备（手机/平板）不显示自定义圆点光标
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+      dot.style.display = 'none'
+      return
+    }
     let raf = null
 
     const onMove = (e) => {

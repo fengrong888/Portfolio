@@ -1094,13 +1094,14 @@ textarea {
   /* 作品详情图片：加宽至 97%（左右留白缩小，保持原比例居中） */
   .detail__figure { width: 97%; }
   .detail__gallery { gap: 10px; }
-  /* 手机端：左侧信息区改为正常流置于图片上方 */
+  /* 手机端：左侧信息区改为正常流置于图片上方，间距收紧 */
   .detail__lede {
     position: static;
     width: calc(100vw - 16px);
     padding: 0 8px;
     margin-top: var(--nav-h);
   }
+  .detail__gallery { padding-top: 14px; }
 
   /* 关于我：横线 / 标题 / LOGO 墙加宽至 90% */
   .about__rule-top, .about__rule-bottom { width: 90vw; margin-inline: 5vw; }
