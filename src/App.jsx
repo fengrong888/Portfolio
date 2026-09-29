@@ -40,8 +40,16 @@ function Shell() {
 }
 
 export default function App() {
-  // 开屏动画：打开网站（无具体页面的 hash）先显示；刷新停留在当前页（如 #/work/3、#/about）则直接进入该页
+  // 开屏动画：
+  // - 新打开网址（输入/点链接，非刷新）→ 总是先进首屏，点击后进入 hash 指向的页面
+  // - 刷新 / 从历史返回 → 停留在当前页（如 #/work/3、#/about），不再回首页
   const [intro, setIntro] = useState(() => {
+    let navType = 'navigate'
+    try {
+      const nav = performance.getEntriesByType('navigation')[0]
+      if (nav && nav.type) navType = nav.type
+    } catch { /* 兼容旧浏览器 */ }
+    if (navType === 'navigate' || navType === 'prerender' || navType === '') return true
     const h = window.location.hash || ''
     return !h || h === '#' || h === '#/'
   })
