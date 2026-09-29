@@ -10,7 +10,7 @@
   src: url('./assets/fonts/AlimamaFangYuanTiVF.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 :root {
   --canvas: #131110;            /* 暖炭底（非纯黑，L≈8） */

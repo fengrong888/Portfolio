@@ -145,6 +145,13 @@ export default function HeroIntro({ onDone }) {
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
+    // 主动触发方圆体字体加载，配合 font-display:block 消除首屏字体闪变
+    if (document.fonts && typeof document.fonts.load === 'function') {
+      try {
+        document.fonts.load('700 100px "AlimamaFangYuanTiVF"')
+        document.fonts.load('900 100px "AlimamaFangYuanTiVF"')
+      } catch { /* 忽略 */ }
+    }
     const t = window.setTimeout(() => {
       const mark = stage.querySelector('.hero-intro__wordmark')
       if (mark) {
