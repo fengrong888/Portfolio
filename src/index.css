@@ -147,7 +147,7 @@ dl, dd { margin: 0; }
   padding: 6px 0;
   font-family: var(--font-mono);
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 0.18em;
   color: var(--ink-dim);
   transition: color 0.3s;
