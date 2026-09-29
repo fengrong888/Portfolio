@@ -857,12 +857,12 @@ dl, dd { margin: 0; }
   color: rgba(236, 230, 220, 0.9);
   transition: color 0.35s var(--ease);
 }
-.footer__social svg { display: block; width: 25px; height: auto; }
+.footer__social svg { display: block; width: 30px; height: auto; }
 .footer__social--xhs:hover { color: #ff2442; }
 .footer__social--wx:hover { color: #07c160; }
 .footer__note {
   font-family: 'AlimamaFangYuanTiVF', var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 400;
   font-variation-settings: 'wght' 300, 'BEVL' 1;
   letter-spacing: 0.14em;
