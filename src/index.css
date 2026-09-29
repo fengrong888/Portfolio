@@ -1374,7 +1374,12 @@ textarea {
 .ap-shot {
   position: relative;
   flex: 0 0 auto;
+  cursor: grab;
 }
+.ap-shot:active { cursor: grabbing; }
+.ap-shot--drag { opacity: 0.35; }
+.ap-shot--over { opacity: 1; }
+.ap-shot--over img { outline: 2px dashed var(--accent-bright); outline-offset: 2px; }
 .ap-shot img {
   display: block;
   width: 60px;

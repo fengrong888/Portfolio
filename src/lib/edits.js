@@ -302,6 +302,14 @@ export async function insertShot(id, currentShots, index, dataUrl) {
   const next = [...currentShots.slice(0, index), dataUrl, ...currentShots.slice(index)]
   await putImage(`work-${id}-shots`, JSON.stringify(next))
 }
+// 详情图拖拽调换顺序：把 from 处的图移动到 to 处
+export async function moveShot(id, currentShots, from, to) {
+  if (from === to || from < 0 || to < 0 || from >= currentShots.length || to >= currentShots.length) return
+  const next = [...currentShots]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved)
+  await putImage(`work-${id}-shots`, JSON.stringify(next))
+}
 
 export async function removeImage(key) {
   try {

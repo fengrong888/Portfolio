@@ -16,6 +16,7 @@ import {
   setWorkOrder,
   deleteShot,
   insertShot,
+  moveShot,
   exportAllData,
   getCloudToken,
   setCloudToken,
@@ -32,6 +33,8 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const [open, setOpen] = useState(false)
   const [upCover, setUpCover] = useState(false)
   const [upShots, setUpShots] = useState(false)
+  const [shotDrag, setShotDrag] = useState(null) // 详情图拖拽：起始 index
+  const [shotOver, setShotOver] = useState(null) // 详情图拖拽：悬停目标 index
   const coverRef = useRef(null)
   const shotsRef = useRef(null)
   const insertRef = useRef(null) // 记录待插入位置：{ index }
@@ -92,18 +95,25 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
       className={cls}
       draggable={draggable}
       onDragStart={(e) => {
+        if (e.target.closest('.ap-shot')) return // 详情图拖拽不触发作品行排序
         e.dataTransfer.effectAllowed = 'move'
         onDragStart(id)
       }}
       onDragOver={(e) => {
+        if (e.target.closest('.ap-shot')) return
         e.preventDefault()
         onDragOver(id)
       }}
       onDrop={(e) => {
+        if (e.target.closest('.ap-shot')) return
         e.preventDefault()
         onDrop(id)
       }}
-      onDragEnd={() => onDragOver(null)}
+      onDragEnd={() => {
+        onDragOver(null)
+        setShotDrag(null)
+        setShotOver(null)
+      }}
     >
       <button className="ap-row__head" onClick={() => setOpen((o) => !o)}>
         <span className="ap-row__grip" aria-hidden="true">⋮⋮</span>
@@ -141,13 +151,40 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
 
           <div className="ap-shots">
             <span className="ap-row__imgs-label">
-              详情图（{shots.length} 张）：每张可删除，或在任意一张前 / 后插入新图
+              详情图（{shots.length} 张）：拖动缩略图可调换顺序；每张可删除，或在任意一张前 / 后插入新图
             </span>
             {shots.length === 0 && <p className="ap-row__note">暂无详情图——可在下方批量上传，或插入单张。</p>}
             <div className="ap-shots__list">
               {shots.map((s, i) => (
-                <div className="ap-shot" key={`${s.slice(0, 24)}-${i}`}>
-                  <img src={s} alt={`详情图 ${i + 1}`} />
+                <div
+                  className={`ap-shot${shotOver === i ? ' ap-shot--over' : ''}${
+                    shotDrag === i ? ' ap-shot--drag' : ''
+                  }`}
+                  key={`${s.slice(0, 24)}-${i}`}
+                  draggable
+                  onDragStart={(e) => {
+                    e.stopPropagation()
+                    e.dataTransfer.effectAllowed = 'move'
+                    setShotDrag(i)
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShotOver(i)
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (shotDrag !== null && shotDrag !== i) moveShot(id, shots, shotDrag, i)
+                    setShotDrag(null)
+                    setShotOver(null)
+                  }}
+                  onDragEnd={() => {
+                    setShotDrag(null)
+                    setShotOver(null)
+                  }}
+                >
+                  <img src={s} alt={`详情图 ${i + 1}`} draggable={false} />
                   <button className="ap-shot__del" title="删除此图" onClick={() => onDeleteShot(i)}>
                     ×
                   </button>
