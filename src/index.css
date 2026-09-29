@@ -325,8 +325,8 @@ dl, dd { margin: 0; }
 }
 .card__intro-en {
   font-family: 'AlimamaFangYuanTiVF', var(--font-mono);
-  font-weight: 400;
-  font-variation-settings: 'wght' 400, 'BEVL' 1;
+  font-weight: 500;
+  font-variation-settings: 'wght' 500, 'BEVL' 1;
   font-size: 11px;
   letter-spacing: 0.22em;
   line-height: 1.6;
