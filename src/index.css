@@ -1031,6 +1031,7 @@ textarea {
 
 /* 导航按钮：逐字上浮转金（顶部导航） */
 .nav__l { display: inline-block; will-change: transform; transition: color 0.25s; }
+.nav__link:hover .nav__link-mask { overflow: visible; }
 .nav__link:hover .nav__l {
   color: var(--accent-bright);
   animation: lu-up-nav 0.62s cubic-bezier(.36, .07, .19, .97) both;
