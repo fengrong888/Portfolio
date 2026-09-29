@@ -305,8 +305,11 @@ dl, dd { margin: 0; }
 
 .card__intro-cat {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 12px;
   letter-spacing: 0.3em;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: break-word;
   color: rgba(19, 17, 16, 0.78);
   margin-bottom: 13px;
 }
@@ -316,14 +319,19 @@ dl, dd { margin: 0; }
   font-weight: 600;
   line-height: 1.28;
   letter-spacing: 0.02em;
+  white-space: normal;
+  overflow-wrap: break-word;
   margin: 0 0 13px;
 }
 .card__intro-en {
   font-family: 'AlimamaFangYuanTiVF', var(--font-mono);
   font-weight: 400;
   font-variation-settings: 'wght' 400, 'BEVL' 1;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.22em;
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: break-word;
   text-transform: uppercase;
   color: rgba(19, 17, 16, 0.72);
 }
