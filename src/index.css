@@ -615,7 +615,7 @@ dl, dd { margin: 0; }
 .about__edu-sub,
 .about__c-years,
 .about__c-role {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-weight: 400;
 }
 
