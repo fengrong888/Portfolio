@@ -1024,9 +1024,9 @@ textarea {
 /* 上浮：逐字上浮转金（幅度加大版） */
 @keyframes lu-up-nav {
   0%, 100% { transform: translateY(0); }
-  35% { transform: translateY(-24px); }
+  35% { transform: translateY(-16px); }
   55% { transform: translateY(0); }
-  75% { transform: translateY(-9px); }
+  75% { transform: translateY(-6px); }
 }
 
 /* 导航按钮：逐字上浮转金（顶部导航） */
