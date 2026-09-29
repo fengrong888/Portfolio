@@ -1009,35 +1009,31 @@ textarea {
 
 
 /* ============================================================
-   按钮悬停动效：波浪翻面转金（导航 + 详情按钮统一）
+   按钮悬停动效：逐字上浮转金（导航 + 详情按钮统一）
    ============================================================ */
 .lu { display: inline-block; }
 .lu__c { display: inline-block; will-change: transform; }
-.detail__back,
-.detail__arrow { perspective: 700px; }
 .detail__back:hover .lu__c,
 .detail__arrow:hover .lu__c {
-  animation: navWave 0.9s cubic-bezier(.22, 1, .36, 1) both;
+  animation: lu-up-nav 0.62s cubic-bezier(.36, .07, .19, .97) both;
   animation-delay: calc(var(--i) * 0.055s);
 }
 .detail__back:hover,
 .detail__arrow:hover { color: var(--accent-bright); }
 
-/* 波浪翻面：逐字正反错峰，像波浪滚过（13 号方案） */
-@keyframes navWave {
-  0% { transform: rotateX(0); opacity: 1; }
-  30% { transform: rotateX(-100deg); opacity: .35; }
-  50% { transform: rotateX(-180deg); opacity: 0; }
-  70% { transform: rotateX(80deg); opacity: .35; }
-  100% { transform: rotateX(0); opacity: 1; }
+/* 上浮：逐字上浮转金（幅度加大版） */
+@keyframes lu-up-nav {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-24px); }
+  55% { transform: translateY(0); }
+  75% { transform: translateY(-9px); }
 }
 
-/* 导航按钮：波浪翻面转金（顶部导航） */
-.nav__link { perspective: 700px; }
+/* 导航按钮：逐字上浮转金（顶部导航） */
 .nav__l { display: inline-block; will-change: transform; transition: color 0.25s; }
 .nav__link:hover .nav__l {
   color: var(--accent-bright);
-  animation: navWave 0.9s cubic-bezier(.22, 1, .36, 1) both;
+  animation: lu-up-nav 0.62s cubic-bezier(.36, .07, .19, .97) both;
   animation-delay: calc(var(--i) * 0.06s);
 }
 
