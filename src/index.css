@@ -146,8 +146,8 @@ dl, dd { margin: 0; }
   position: relative;
   padding: 6px 0;
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 400;
   letter-spacing: 0.18em;
   color: var(--ink-dim);
   transition: color 0.3s;
@@ -353,7 +353,7 @@ dl, dd { margin: 0; }
 .detail__back,
 .detail__arrow {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.18em;
   color: var(--ink-dim);
   transition: color 0.3s;
