@@ -1017,7 +1017,7 @@ textarea {
 .detail__arrow { perspective: 700px; }
 .detail__back:hover .lu__c,
 .detail__arrow:hover .lu__c {
-  animation: navWave 0.7s cubic-bezier(.22, 1, .36, 1) both;
+  animation: navWave 0.9s cubic-bezier(.22, 1, .36, 1) both;
   animation-delay: calc(var(--i) * 0.055s);
 }
 .detail__back:hover,
@@ -1037,7 +1037,7 @@ textarea {
 .nav__l { display: inline-block; will-change: transform; transition: color 0.25s; }
 .nav__link:hover .nav__l {
   color: var(--accent-bright);
-  animation: navWave 0.7s cubic-bezier(.22, 1, .36, 1) both;
+  animation: navWave 0.9s cubic-bezier(.22, 1, .36, 1) both;
   animation-delay: calc(var(--i) * 0.06s);
 }
 
