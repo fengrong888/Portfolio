@@ -1015,7 +1015,7 @@ textarea {
 .lu__c { display: inline-block; will-change: transform; }
 .detail__back:hover .lu__c,
 .detail__arrow:hover .lu__c {
-  animation: lu-up 0.62s cubic-bezier(.36,.07,.19,.97) both;
+  animation: lu-up-nav 0.62s cubic-bezier(.36,.07,.19,.97) both;
   animation-delay: calc(var(--i) * 0.055s);
 }
 .detail__back:hover,
