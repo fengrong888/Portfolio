@@ -45,9 +45,6 @@ export default function Contact() {
   return (
     <main ref={ref} className="contact">
       <div className="wrap contact__inner">
-        <div className="kicker mono">
-          <span className="mask"><span className="mask-in"><Editable k="contact-kicker" fallback="联系 — CONTACT" /></span></span>
-        </div>
         <button
           type="button"
           className="contact__mail st"
