@@ -47,7 +47,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const [d, setD] = useState(() => ({
     title: work.title,
     cat: work.cat,
-    en: work.en,
     year: work.year ?? '',
     dtitle: work.dtitle ?? work.title,
     dcat: work.dcat ?? work.cat,
@@ -58,7 +57,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
     const commit = () => {
       if (d.title !== work.title) applyEdit(`work-${id}-title`, d.title)
       if (d.cat !== work.cat) applyEdit(`work-${id}-cat`, d.cat)
-      if (d.en !== work.en) applyEdit(`work-${id}-en`, d.en)
       if (d.year !== (work.year ?? '')) applyEdit(`work-${id}-year`, d.year)
       if (d.dtitle !== (work.dtitle ?? work.title)) applyEdit(`work-${id}-dtitle`, d.dtitle)
       if (d.dcat !== (work.dcat ?? work.cat)) applyEdit(`work-${id}-dcat`, d.dcat)
@@ -152,10 +150,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
           <label>
             类别
             <input value={d.cat} onChange={setDk('cat')} />
-          </label>
-          <label>
-            英文
-            <input value={d.en} onChange={setDk('en')} />
           </label>
 
           <p className="ap-row__group">详情页文字</p>

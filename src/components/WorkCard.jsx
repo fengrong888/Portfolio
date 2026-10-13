@@ -145,9 +145,6 @@ export default function WorkCard({ work, index }) {
           <h3 className="card__intro-title">
             <Editable k={`work-${work.id}-title`} fallback={work.title} />
           </h3>
-          <div className="card__intro-en">
-            <Editable k={`work-${work.id}-en`} fallback={work.en} />
-          </div>
         </div>
       </motion.div>
     </Link>
