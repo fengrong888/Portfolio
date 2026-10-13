@@ -104,6 +104,33 @@ export const NEW_WORK_PLACEHOLDER =
 // 构建「基础作品 + 本地新增作品」的完整列表（编辑覆盖 title/cat/en）
 // 结果缓存：仅当编辑数据变化时重建，保证 useSyncExternalStore 快照引用稳定
 let worksCache = null
+// 按年份排序的固定顺序（最新在上、最老在下）：2026→2025→2024→2023→2022→2020
+const FIXED_ORDER = [9, 17, 1, 15, 19, 2, 3, 6, 13, 16, 18, 4, 5, 7, 8, 10, 14, 20, 12, 11]
+const ORDER_VERSION = 2
+function resolveOrder(S) {
+  try {
+    let v = 0
+    try {
+      v = Number(localStorage.getItem('portfolio-order-version') || 0)
+    } catch { /* ignore */ }
+    if (v < ORDER_VERSION) {
+      // 新版本首次生效：把本地拖拽顺序一并替换为按年份的固定顺序（仅一次），
+      // 避免版本标记已写但内存中仍保留旧 order 导致重算回退
+      try {
+        localStorage.setItem('portfolio-order-version', String(ORDER_VERSION))
+        const raw = localStorage.getItem(KEY) || '{}'
+        const cur = JSON.parse(raw)
+        cur['work-order'] = JSON.stringify(FIXED_ORDER)
+        localStorage.setItem(KEY, JSON.stringify(cur))
+        edits = { ...edits, 'work-order': JSON.stringify(FIXED_ORDER) }
+      } catch { /* ignore */ }
+      return FIXED_ORDER
+    }
+    return JSON.parse(S['work-order'] || 'null')
+  } catch {
+    return null
+  }
+}
 function computeWorks(live = false) {
   const S = live ? edits : activeEdits()
   const IMG = live ? imageStore : activeImages()
@@ -112,12 +139,7 @@ function computeWorks(live = false) {
     const m = k.match(/^work-(\d+)-(title|cat|en)$/)
     if (m && S[`work-${m[1]}-deleted`] !== '1') ids.add(Number(m[1]))
   })
-  let order = null
-  try {
-    order = JSON.parse(S['work-order'] || 'null')
-  } catch {
-    order = null
-  }
+  let order = resolveOrder(S)
   const sorted = [...ids]
   if (Array.isArray(order) && order.length) {
     sorted.sort((a, b) => {
