@@ -143,12 +143,12 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
 
           <p className="ap-row__group">详情页文字（左上角三行，可独立调整）</p>
           <label>
-            标题
-            <input value={dtitle} onChange={(e) => applyEdit(`work-${id}-dtitle`, e.target.value)} />
+            标题（可多行，Enter 换行）
+            <textarea rows="2" value={dtitle} onChange={(e) => applyEdit(`work-${id}-dtitle`, e.target.value)} />
           </label>
           <label>
-            类别
-            <input value={dcat} onChange={(e) => applyEdit(`work-${id}-dcat`, e.target.value)} />
+            类别（可多行，Enter 换行）
+            <textarea rows="2" value={dcat} onChange={(e) => applyEdit(`work-${id}-dcat`, e.target.value)} />
           </label>
           <label>
             年份

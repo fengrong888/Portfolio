@@ -69,10 +69,10 @@ export default function WorkDetail() {
 
       <div className="detail__lede">
         <div className="detail__lede-row" style={{ '--i': 0 }}>
-          <Editable k={`work-${work.id}-dcat`} fallback={work.dcat ?? work.cat} />
+          <Editable k={`work-${work.id}-dcat`} fallback={work.dcat ?? work.cat} multiline />
         </div>
         <div className="detail__lede-row" style={{ '--i': 1 }}>
-          <Editable k={`work-${work.id}-dtitle`} fallback={work.dtitle ?? work.title} />
+          <Editable k={`work-${work.id}-dtitle`} fallback={work.dtitle ?? work.title} multiline />
         </div>
         {work.year && (
           <div className="detail__lede-row detail__lede-en" style={{ '--i': 2 }}>

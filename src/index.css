@@ -419,7 +419,7 @@ dl, dd { margin: 0; }
   color: #ffffff;
   padding: 9px 0;
   border-bottom: 1px solid rgba(244, 241, 234, 0.2);
-  white-space: normal;
+  white-space: pre-wrap;
   overflow-wrap: break-word;
   animation: lede-row-in 0.8s var(--ease-out-expo) both;
   animation-delay: calc(var(--i) * 0.09s);
@@ -1238,7 +1238,8 @@ textarea {
   font-size: 12px;
   color: var(--ink-dim);
 }
-.ap-row__form input {
+.ap-row__form input,
+.ap-row__form textarea {
   flex: 1;
   padding: 7px 9px;
   background: rgba(0, 0, 0, 0.35);
@@ -1247,8 +1248,10 @@ textarea {
   color: var(--ink);
   font-size: 13px;
   font-family: var(--font-body);
+  resize: vertical;
 }
-.ap-row__form input:focus { outline: none; border-color: var(--accent); }
+.ap-row__form input:focus,
+.ap-row__form textarea:focus { outline: none; border-color: var(--accent); }
 .ap-row__note { margin: 4px 0 0; font-size: 11px; line-height: 1.6; color: var(--accent-bright); }
 .adminpanel__foot {
   padding: 12px;
