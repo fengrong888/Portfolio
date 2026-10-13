@@ -46,6 +46,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const title = useEdit(`work-${id}-title`, work.title)
   const cat = useEdit(`work-${id}-cat`, work.cat)
   const en = useEdit(`work-${id}-en`, work.en)
+  const year = useEdit(`work-${id}-year`, work.year || '')
   const shots = work.shots || []
 
   const onCover = async (e) => {
@@ -135,6 +136,10 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
           <label>
             英文
             <input value={en} onChange={(e) => applyEdit(`work-${id}-en`, e.target.value)} />
+          </label>
+          <label>
+            年份（详情页左上角第三行显示）
+            <input value={year} onChange={(e) => applyEdit(`work-${id}-year`, e.target.value)} />
           </label>
 
           <div className="ap-row__imgs">

@@ -122,6 +122,7 @@ function computeWorks() {
           title: edits[`work-${id}-title`] ?? base.title,
           cat: edits[`work-${id}-cat`] ?? base.cat,
           en: edits[`work-${id}-en`] ?? base.en,
+          year: edits[`work-${id}-year`] ?? base.year,
           img: imageStore[`work-${id}-img`] || base.img,
           shots: upShots ? JSON.parse(upShots) : base.shots,
         }
@@ -133,6 +134,7 @@ function computeWorks() {
         title: edits[`work-${id}-title`] || `新作品 ${id}`,
         cat: edits[`work-${id}-cat`] || '设计项目',
         en: edits[`work-${id}-en`] || 'New Project',
+        year: edits[`work-${id}-year`] || '2025',
         ratio: '3 / 4',
         img: imageStore[`work-${id}-img`] || NEW_WORK_PLACEHOLDER,
         hover: '#C6CE3B',
@@ -183,6 +185,7 @@ export function exportWorks() {
     title: w.title,
     cat: w.cat,
     en: w.en,
+    year: w.year ?? '',
     new: !!w._new,
     imgNeeded: !!w._new,
     ...(w._new ? {} : { img: w.img, ratio: w.ratio, hover: w.hover, shots: w.shots.length, tags: w.tags }),

@@ -74,9 +74,13 @@ export default function WorkDetail() {
         <div className="detail__lede-row" style={{ '--i': 1 }}>
           <Editable k={`work-${work.id}-title`} fallback={work.title} />
         </div>
-        {work.en && (
+        {work.year && (
           <div className="detail__lede-row detail__lede-en" style={{ '--i': 2 }}>
-            <Editable k={`work-${work.id}-en`} fallback={work.en} />
+            <Editable
+              k={`work-${work.id}-year`}
+              fallback={work.year}
+              format={(v) => `${String(v).replace(/年$/, '')}年`}
+            />
           </div>
         )}
       </div>
