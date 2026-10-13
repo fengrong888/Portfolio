@@ -16,8 +16,16 @@ let editing = false
 let rev = 0
 const listeners = new Set()
 
+// 「完成才生效」冻结机制：进入后台时冻结前台读取的数据快照，
+// 后台所有操作（文字/图片/排序/增删）先落在实时存储里，前台组件仍读冻结快照；
+// 点「完成」释放冻结，前台一次性刷新为最新内容。
+let frozenEdits = null
+let frozenImages = null
+
 export const getEdits = () => edits
 export const isEditing = () => editing
+const activeEdits = () => (editing && frozenEdits ? frozenEdits : edits)
+const activeImages = () => (editing && frozenImages ? frozenImages : imageStore)
 
 export function bumpRev() {
   rev += 1
@@ -27,6 +35,13 @@ export function useEditsRev() {
 }
 export function setEditing(v) {
   editing = v
+  if (v) {
+    frozenEdits = edits
+    frozenImages = { ...imageStore }
+  } else {
+    frozenEdits = null
+    frozenImages = null
+  }
   if (typeof document !== 'undefined') {
     document.body.classList.toggle('edit-mode', v)
   }
@@ -42,7 +57,7 @@ export function applyEdit(k, v) {
     /* 存储不可用时仅本次会话生效 */
   }
   listeners.forEach((l) => l())
-  queueSync()
+  if (!editing) queueSync() // 后台编辑中不推送云端，点「完成」时统一同步
 }
 
 export function clearEdits() {
@@ -65,7 +80,7 @@ export function subscribeEdits(fn) {
 
 export function useEdit(k, fallback) {
   return useSyncExternalStore(subscribeEdits, () => {
-    const v = edits[k]
+    const v = activeEdits()[k]
     // 规则：允许删减与修改单个字符；显式保存过（含空串）就以保存值为准，
     // 未编辑过才回退默认文案。误删可在编辑模式下重新点入修改。
     return v !== undefined ? v : fallback
@@ -89,15 +104,17 @@ export const NEW_WORK_PLACEHOLDER =
 // 构建「基础作品 + 本地新增作品」的完整列表（编辑覆盖 title/cat/en）
 // 结果缓存：仅当编辑数据变化时重建，保证 useSyncExternalStore 快照引用稳定
 let worksCache = null
-function computeWorks() {
+function computeWorks(live = false) {
+  const S = live ? edits : activeEdits()
+  const IMG = live ? imageStore : activeImages()
   const ids = new Set(baseWorks.map((w) => w.id))
-  Object.keys(edits).forEach((k) => {
+  Object.keys(S).forEach((k) => {
     const m = k.match(/^work-(\d+)-(title|cat|en)$/)
-    if (m && edits[`work-${m[1]}-deleted`] !== '1') ids.add(Number(m[1]))
+    if (m && S[`work-${m[1]}-deleted`] !== '1') ids.add(Number(m[1]))
   })
   let order = null
   try {
-    order = JSON.parse(edits['work-order'] || 'null')
+    order = JSON.parse(S['work-order'] || 'null')
   } catch {
     order = null
   }
@@ -113,32 +130,32 @@ function computeWorks() {
   }
   return sorted
     .map((id) => {
-      if (edits[`work-${id}-deleted`] === '1') return null
+      if (S[`work-${id}-deleted`] === '1') return null
       const base = baseWorks.find((w) => w.id === id)
       if (base) {
-        const upShots = imageStore[`work-${id}-shots`]
+        const upShots = IMG[`work-${id}-shots`]
         return {
           ...base,
-          title: edits[`work-${id}-title`] ?? base.title,
-          cat: edits[`work-${id}-cat`] ?? base.cat,
-          en: edits[`work-${id}-en`] ?? base.en,
-          year: edits[`work-${id}-year`] ?? base.year,
-          dcat: edits[`work-${id}-dcat`] ?? edits[`work-${id}-cat`] ?? base.cat,
-          dtitle: edits[`work-${id}-dtitle`] ?? edits[`work-${id}-title`] ?? base.title,
-          img: imageStore[`work-${id}-img`] || base.img,
+          title: S[`work-${id}-title`] ?? base.title,
+          cat: S[`work-${id}-cat`] ?? base.cat,
+          en: S[`work-${id}-en`] ?? base.en,
+          year: S[`work-${id}-year`] ?? base.year,
+          dcat: S[`work-${id}-dcat`] ?? S[`work-${id}-cat`] ?? base.cat,
+          dtitle: S[`work-${id}-dtitle`] ?? S[`work-${id}-title`] ?? base.title,
+          img: IMG[`work-${id}-img`] || base.img,
           shots: upShots ? JSON.parse(upShots) : base.shots,
         }
       }
       // 新增作品（尚未提供图片，使用占位封面）
-      const nShots = imageStore[`work-${id}-shots`]
+      const nShots = IMG[`work-${id}-shots`]
       return {
         id,
-        title: edits[`work-${id}-title`] || `新作品 ${id}`,
-        cat: edits[`work-${id}-cat`] || '设计项目',
-        en: edits[`work-${id}-en`] || 'New Project',
-        year: edits[`work-${id}-year`] || '2025',
-        dcat: edits[`work-${id}-dcat`] ?? edits[`work-${id}-cat`] ?? '设计项目',
-        dtitle: edits[`work-${id}-dtitle`] ?? edits[`work-${id}-title`] ?? `新作品 ${id}`,
+        title: S[`work-${id}-title`] || `新作品 ${id}`,
+        cat: S[`work-${id}-cat`] || '设计项目',
+        en: S[`work-${id}-en`] || 'New Project',
+        year: S[`work-${id}-year`] || '2025',
+        dcat: S[`work-${id}-dcat`] ?? S[`work-${id}-cat`] ?? '设计项目',
+        dtitle: S[`work-${id}-dtitle`] ?? S[`work-${id}-title`] ?? `新作品 ${id}`,
         ratio: '3 / 4',
         img: imageStore[`work-${id}-img`] || NEW_WORK_PLACEHOLDER,
         hover: '#C6CE3B',
@@ -151,11 +168,19 @@ function computeWorks() {
     .filter(Boolean)
 }
 export function buildWorks() {
-  if (!worksCache) worksCache = computeWorks()
+  if (!worksCache) worksCache = computeWorks(false)
   return worksCache
+}
+// 后台面板实时列表（读取实时存储，不受「完成才生效」冻结影响）
+// 快照必须引用稳定：带缓存，配合 invalidateWorks 在编辑数据变化时失效
+let liveCache = null
+export function computeLiveWorks() {
+  if (!liveCache) liveCache = computeWorks(true)
+  return liveCache
 }
 function invalidateWorks() {
   worksCache = null
+  liveCache = null
 }
 
 // 作品排序：拖拽调整后写入 work-order（JSON 数组），部署时按此固化
@@ -284,8 +309,9 @@ export async function putImage(key, value) {
   imageStore[key] = value
   invalidateWorks()
   listeners.forEach((l) => l())
-  // 云端同步：dataURL 上传为仓库路径后全端可见（失败时保持本地，下次再试）
-  if (token) {
+  // 云端同步：dataURL 上传为仓库路径后全端可见（失败时保持本地，下次再试）；
+  // 后台编辑中不推云端，点「完成」时由 migrateCloudImages 统一推送
+  if (token && !editing) {
     syncImageToCloud(key, value)
       .then((next) => {
         if (next !== value) {
@@ -337,7 +363,7 @@ export async function removeImage(key) {
   invalidateWorks()
   listeners.forEach((l) => l())
   removeCloudLinked(key, removed).then(() => {
-    if (token) queueSync(200)
+    if (token && !editing) queueSync(200)
   })
 }
 

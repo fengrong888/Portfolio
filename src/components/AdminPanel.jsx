@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import {
   useEditing,
-  useEdit,
   applyEdit,
-  useWorks,
+  subscribeEdits,
+  computeLiveWorks,
   nextWorkId,
   buildWorks,
   getWorkOrder,
@@ -43,12 +43,29 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   useEditsRev()
   const hasCover = !!getStoredImage(`work-${id}-img`)
   const hasShots = !!getStoredImage(`work-${id}-shots`)
-  const title = useEdit(`work-${id}-title`, work.title)
-  const cat = useEdit(`work-${id}-cat`, work.cat)
-  const en = useEdit(`work-${id}-en`, work.en)
-  const year = useEdit(`work-${id}-year`, work.year || '')
-  const dtitle = useEdit(`work-${id}-dtitle`, work.dtitle ?? work.title)
-  const dcat = useEdit(`work-${id}-dcat`, work.dcat ?? work.cat)
+  // 文字草稿：后台输入先改草稿，点「完成」才提交到网站
+  const [d, setD] = useState(() => ({
+    title: work.title,
+    cat: work.cat,
+    en: work.en,
+    year: work.year ?? '',
+    dtitle: work.dtitle ?? work.title,
+    dcat: work.dcat ?? work.cat,
+  }))
+  const setDk = (k) => (e) => setD((p) => ({ ...p, [k]: e.target.value }))
+  // 监听「完成」事件统一提交草稿
+  useEffect(() => {
+    const commit = () => {
+      if (d.title !== work.title) applyEdit(`work-${id}-title`, d.title)
+      if (d.cat !== work.cat) applyEdit(`work-${id}-cat`, d.cat)
+      if (d.en !== work.en) applyEdit(`work-${id}-en`, d.en)
+      if (d.year !== (work.year ?? '')) applyEdit(`work-${id}-year`, d.year)
+      if (d.dtitle !== (work.dtitle ?? work.title)) applyEdit(`work-${id}-dtitle`, d.dtitle)
+      if (d.dcat !== (work.dcat ?? work.cat)) applyEdit(`work-${id}-dcat`, d.dcat)
+    }
+    window.addEventListener('admin-commit', commit)
+    return () => window.removeEventListener('admin-commit', commit)
+  }, [d, work, id])
   const shots = work.shots || []
 
   const onCover = async (e) => {
@@ -86,8 +103,8 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
 
   const onDelete = () => {
     const msg = work._new
-      ? `确定删除「${title}」？该新增作品将被移除。`
-      : `确定删除「${title}」？删除后本机预览立即生效；导出数据发回部署后，该作品将从网站永久移除（可通过重新提供恢复）。`
+      ? `确定删除「${d.title}」？该新增作品将被移除。`
+      : `确定删除「${d.title}」？删除后本机预览立即生效；导出数据发回部署后，该作品将从网站永久移除（可通过重新提供恢复）。`
     if (window.confirm(msg)) deleteWork(id)
   }
 
@@ -122,37 +139,37 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
     >
       <button className="ap-row__head" onClick={() => setOpen((o) => !o)}>
         <span className="ap-row__grip" aria-hidden="true">⋮⋮</span>
-        <span className="ap-row__t">{title || '（未命名）'}</span>
+        <span className="ap-row__t">{d.title || '（未命名）'}</span>
         {work._new && <em className="ap-row__tag">新</em>}
       </button>
       {open && (
         <div className="ap-row__form">
-          <p className="ap-row__group">封面文字（悬停封面显示）</p>
+          <p className="ap-row__group">封面文字</p>
           <label>
             标题
-            <input value={title} onChange={(e) => applyEdit(`work-${id}-title`, e.target.value)} />
+            <input value={d.title} onChange={setDk('title')} />
           </label>
           <label>
             类别
-            <input value={cat} onChange={(e) => applyEdit(`work-${id}-cat`, e.target.value)} />
+            <input value={d.cat} onChange={setDk('cat')} />
           </label>
           <label>
             英文
-            <input value={en} onChange={(e) => applyEdit(`work-${id}-en`, e.target.value)} />
+            <input value={d.en} onChange={setDk('en')} />
           </label>
 
-          <p className="ap-row__group">详情页文字（左上角三行，可独立调整）</p>
+          <p className="ap-row__group">详情页文字</p>
           <label>
-            标题（可多行，Enter 换行）
-            <textarea rows="2" value={dtitle} onChange={(e) => applyEdit(`work-${id}-dtitle`, e.target.value)} />
+            标题
+            <textarea rows="3" value={d.dtitle} onChange={setDk('dtitle')} />
           </label>
           <label>
-            类别（可多行，Enter 换行）
-            <textarea rows="2" value={dcat} onChange={(e) => applyEdit(`work-${id}-dcat`, e.target.value)} />
+            类别
+            <textarea rows="3" value={d.dcat} onChange={setDk('dcat')} />
           </label>
           <label>
             年份
-            <input value={year} onChange={(e) => applyEdit(`work-${id}-year`, e.target.value)} />
+            <input value={d.year} onChange={setDk('year')} />
           </label>
 
           <div className="ap-row__imgs">
@@ -260,7 +277,7 @@ export default function AdminPanel() {
   const [exported, setExported] = useState(false)
   const [dragId, setDragId] = useState(null)
   const [overId, setOverId] = useState(null)
-  const works = useWorks()
+  const works = useSyncExternalStore(subscribeEdits, computeLiveWorks)
   const cloud = useCloudStatus()
   const [tok, setTok] = useState(getCloudToken())
   const [migMsg, setMigMsg] = useState('')
@@ -281,7 +298,10 @@ export default function AdminPanel() {
     }
   }
   const handleDone = async () => {
-    // 点「完成」时确保所有修改已同步到云端（含自动上传未同步的本地图片）
+    // 1) 先统一提交所有行的文字草稿（点「完成」才让修改在网站生效）
+    window.dispatchEvent(new CustomEvent('admin-commit'))
+    await new Promise((r) => setTimeout(r, 50))
+    // 2) 提交完成后同步云端（含自动上传未同步的本地图片）
     if (cloud.configured) {
       try {
         await syncNow()
