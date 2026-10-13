@@ -5,6 +5,8 @@ import {
   applyEdit,
   useWorks,
   nextWorkId,
+  buildWorks,
+  getWorkOrder,
   deleteWork,
   clearEdits,
   setEditing,
@@ -117,7 +119,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
     >
       <button className="ap-row__head" onClick={() => setOpen((o) => !o)}>
         <span className="ap-row__grip" aria-hidden="true">⋮⋮</span>
-        <span className="ap-row__id">{id}</span>
         <span className="ap-row__t">{title || '（未命名）'}</span>
         {work._new && <em className="ap-row__tag">新</em>}
       </button>
@@ -282,6 +283,9 @@ export default function AdminPanel() {
     applyEdit(`work-${id}-title`, `新作品 ${id}`)
     applyEdit(`work-${id}-cat`, '设计项目')
     applyEdit(`work-${id}-en`, 'New Project')
+    // 新增作品默认排在最前面（第一个）
+    const curOrder = getWorkOrder() || buildWorks().map((w) => w.id)
+    setWorkOrder([id, ...curOrder.filter((x) => x !== id)])
   }
 
   const handleDrop = (targetId) => {

@@ -50,7 +50,7 @@ export default function Footer() {
           <div className="qr-card" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="qr-close" onClick={() => setQrOpen(false)} aria-label="关闭">×</button>
             <p className="qr-title">微信 · 添加我为朋友</p>
-            <img className="qr-img" src="https://aka.doubaocdn.com/s/wafGqph55P" alt="微信二维码" />
+            <img className="qr-img" src="./qr-wechat.png" alt="微信二维码" />
             <p className="qr-hint mono">长按 / 扫描上方二维码添加微信</p>
           </div>
         </div>
