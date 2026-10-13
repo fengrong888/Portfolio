@@ -47,6 +47,8 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const cat = useEdit(`work-${id}-cat`, work.cat)
   const en = useEdit(`work-${id}-en`, work.en)
   const year = useEdit(`work-${id}-year`, work.year || '')
+  const dtitle = useEdit(`work-${id}-dtitle`, work.dtitle ?? work.title)
+  const dcat = useEdit(`work-${id}-dcat`, work.dcat ?? work.cat)
   const shots = work.shots || []
 
   const onCover = async (e) => {
@@ -125,6 +127,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
       </button>
       {open && (
         <div className="ap-row__form">
+          <p className="ap-row__group">封面文字（悬停封面显示）</p>
           <label>
             标题
             <input value={title} onChange={(e) => applyEdit(`work-${id}-title`, e.target.value)} />
@@ -137,8 +140,18 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
             英文
             <input value={en} onChange={(e) => applyEdit(`work-${id}-en`, e.target.value)} />
           </label>
+
+          <p className="ap-row__group">详情页文字（左上角三行，可独立调整）</p>
           <label>
-            年份（详情页左上角第三行显示）
+            标题
+            <input value={dtitle} onChange={(e) => applyEdit(`work-${id}-dtitle`, e.target.value)} />
+          </label>
+          <label>
+            类别
+            <input value={dcat} onChange={(e) => applyEdit(`work-${id}-dcat`, e.target.value)} />
+          </label>
+          <label>
+            年份
             <input value={year} onChange={(e) => applyEdit(`work-${id}-year`, e.target.value)} />
           </label>
 
