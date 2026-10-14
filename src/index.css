@@ -155,6 +155,24 @@ dl, dd { margin: 0; }
 .nav__link:hover { color: var(--ink); }
 .nav__link.active { color: var(--ink); }
 
+/* 导航按钮悬停/点击动效：字体加粗、放大、变色（金色） */
+.nav__l {
+  display: inline-block;
+  will-change: transform;
+  transition: color 0.3s ease, transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), font-weight 0.3s ease;
+}
+.nav__link:hover .nav__l,
+.nav__link.active .nav__l {
+  color: var(--accent-bright);
+  font-weight: 700;
+  transform: scale(1.14);
+}
+/* 点击按下的瞬间轻微回缩，松开后回到放大金色态 */
+.nav__link:active .nav__l {
+  transform: scale(1.05);
+  transition-duration: 0.12s;
+}
+
 /* 导航按钮进场：遮罩揭幕 + 错峰上移（仅打开网站时播一次） */
 .nav__link-mask {
   display: inline-block;
@@ -1089,15 +1107,7 @@ textarea {
   75% { transform: translateY(-6px); }
 }
 
-/* 导航按钮：逐字上浮转金（顶部导航） */
-.nav__l { display: inline-block; will-change: transform; transition: color 0.25s; }
-.nav__link:hover .nav__link-mask { overflow: visible; }
-.nav__link:hover .nav__l {
-  color: var(--accent-bright);
-  animation: lu-up-nav 0.62s cubic-bezier(.36, .07, .19, .97) both;
-  animation-delay: calc(var(--i) * 0.06s);
-}
-
+/* 导航按钮动效已改为：悬停/点击时字体加粗、放大、变色（见 .nav__l 规则） */
 
 
 /* ============================================================
