@@ -146,8 +146,8 @@ dl, dd { margin: 0; }
   position: relative;
   padding: 6px 0;
   font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   letter-spacing: 0.18em;
   color: var(--ink-dim);
   transition: color 0.3s;
@@ -178,7 +178,7 @@ dl, dd { margin: 0; }
 
 @media (max-width: 560px) {
   .nav__links { gap: 14px; }
-  .nav__link { font-size: 11px; letter-spacing: 0.05em; }
+  .nav__link { font-size: 12px; letter-spacing: 0.05em; font-weight: 600; }
   .nav__logo-svg svg { height: 16px; }
 }
 
