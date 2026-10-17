@@ -41,6 +41,8 @@ export function setEditing(v) {
   } else {
     frozenEdits = null
     frozenImages = null
+    // 退出编辑：失效作品缓存，前台立即按实时数据重建（点「完成」后新增/改动即刻生效）
+    invalidateWorks()
   }
   if (typeof document !== 'undefined') {
     document.body.classList.toggle('edit-mode', v)
