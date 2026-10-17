@@ -438,6 +438,11 @@ export function compressImage(file, maxSide = 1400, quality = 0.82) {
         c.width = w
         c.height = h
         c.getContext('2d').drawImage(img, 0, 0, w, h)
+        // 输出 WebP（体积约为 JPEG 的 1/3，全端支持），失败时回退 JPEG
+        try {
+          const out = c.toDataURL('image/webp', quality)
+          if (out.startsWith('data:image/webp')) return resolve(out)
+        } catch { /* fallthrough */ }
         resolve(c.toDataURL('image/jpeg', quality))
       }
       img.onerror = reject
