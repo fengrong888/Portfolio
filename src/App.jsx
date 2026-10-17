@@ -40,8 +40,23 @@ function Shell() {
 }
 
 export default function App() {
-  // 开屏动画：每次加载（含刷新）都先进首屏，点击后进入 hash 指向的页面
-  const [intro, setIntro] = useState(() => true)
+  // 开屏动画：
+  // - 首次打开网址（新标签页首次访问）→ 先进首屏，点击后进入 hash 指向的页面
+  // - 刷新 / 从历史返回 / 再次加载 → 停留在当前页（如 #/work/3、#/about），不再回首屏
+  const [intro, setIntro] = useState(() => {
+    try {
+      // 同一标签页内只要看过一次首屏就写标记；刷新会保留 sessionStorage，故刷新不再回首页
+      if (sessionStorage.getItem('portfolio-intro-shown')) return false
+    } catch { /* 存储不可用时回退到首次显示 */ }
+    return true
+  })
+  useEffect(() => {
+    if (intro) {
+      try {
+        sessionStorage.setItem('portfolio-intro-shown', '1')
+      } catch { /* ignore */ }
+    }
+  }, [intro])
   // 重播开屏时递增 key，强制重新挂载组件（重置鼠标动效）
   const [introKey, setIntroKey] = useState(0)
 
