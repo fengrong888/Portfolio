@@ -1138,6 +1138,25 @@ textarea {
 /* ============================================================
    作品管理面板（Shift+E 呼出，右侧抽屉式后台）
    ============================================================ */
+/* 后台管理：禁止鼠标拖拽与文字选中（详情图缩略图的拖拽排序除外） */
+.adminpanel {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.adminpanel img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: auto;
+}
+.adminpanel .ap-shot {
+  -webkit-user-drag: auto;
+  user-drag: auto;
+}
+.adminpanel input,
+.adminpanel textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
 .adminpanel {
   position: fixed;
   top: 0;
@@ -1335,6 +1354,15 @@ textarea {
 .ap-pw__btns .ap-pw__ok { background: var(--accent-bright); color: #1b1916; font-weight: 600; border: none; }
 .ap-row__imgs { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
 .ap-row__imgs-label { font-size: 11px; color: var(--ink-dim); }
+.ap-cover-prev {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(236, 230, 220, 0.18);
+  background: rgba(0, 0, 0, 0.3);
+  margin: 4px 0;
+}
 .ap-up {
   display: block;
   padding: 8px 10px;

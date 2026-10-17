@@ -168,6 +168,14 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
 
           <div className="ap-row__imgs">
             <span className="ap-row__imgs-label">封面：</span>
+            {hasCover && (
+              <img
+                className="ap-cover-prev"
+                src={getStoredImage(`work-${id}-img`)}
+                alt="封面预览"
+                draggable={false}
+              />
+            )}
             <label className="ap-up">
               <input ref={coverRef} type="file" accept="image/*" onChange={onCover} hidden />
               {upCover ? '✓ 封面已上传' : '上传封面'}
