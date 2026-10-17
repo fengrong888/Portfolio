@@ -328,6 +328,19 @@ export default function AdminPanel() {
     }
     setEditing(false)
   }
+  // 右上角 ×：立即提交草稿并关闭面板，云端同步放到后台继续，点按不卡顿
+  const handleClose = () => {
+    window.dispatchEvent(new CustomEvent('admin-commit'))
+    if (cloud.configured) {
+      ;(async () => {
+        try {
+          await migrateCloudImages()
+          await syncNow()
+        } catch { /* 后台同步失败不影响关闭 */ }
+      })()
+    }
+    setEditing(false)
+  }
 
   if (!editing) return null
 
@@ -372,7 +385,7 @@ export default function AdminPanel() {
     <aside className="adminpanel">
       <button
         className="ap-close"
-        onClick={handleDone}
+        onClick={handleClose}
         title="关闭后台（等同完成）"
         aria-label="关闭后台"
       >

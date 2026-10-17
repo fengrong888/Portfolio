@@ -17,7 +17,7 @@ function DetailFigure({ src, alt }) {
 
   return (
     <figure ref={ref} className="detail__figure">
-      <img className="detail__img" src={src} alt={alt} />
+      <img className="detail__img" src={src} alt={alt} loading="lazy" decoding="async" />
     </figure>
   )
 }

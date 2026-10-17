@@ -801,24 +801,27 @@ export async function migrateCloudImages(onProgress) {
   const total = keys.length + shotKeys.length
   if (total === 0) return { ok: true, migrated: 0 }
   let done = 0
-  for (const k of keys) {
-    try {
-      const p = await syncImageToCloud(k, imageStore[k])
-      done += 1
-      onProgress?.(done, total)
-    } catch {
-      /* 单张失败继续其余 */
+  // 小并发池并行上传，避免大量图片串行导致「完成/关闭」卡顿
+  const runPool = async (arr, worker) => {
+    let i = 0
+    const next = async () => {
+      while (i < arr.length) {
+        const k = arr[i++]
+        try {
+          await worker(k)
+          done += 1
+          onProgress?.(done, total)
+        } catch { /* 单张失败继续其余 */ }
+      }
     }
+    await Promise.all([next(), next(), next()])
   }
-  for (const k of shotKeys) {
-    try {
-      const next = await syncImageToCloud(k, imageStore[k])
-      done += 1
-      onProgress?.(done, total)
-    } catch {
-      /* ignore */
-    }
-  }
+  await runPool(keys, async (k) => {
+    await syncImageToCloud(k, imageStore[k])
+  })
+  await runPool(shotKeys, async (k) => {
+    await syncImageToCloud(k, imageStore[k])
+  })
   queueSync(200)
   return { ok: true, migrated: done }
 }
