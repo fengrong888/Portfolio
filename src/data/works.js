@@ -391,6 +391,19 @@ export const works = [
     tags: ['设计项目'],
     desc: '',
   },
+  {
+    id: 23,
+    title: '南宋菓子局 品牌设计',
+    en: 'New Project',
+    cat: '品牌设计',
+    year: '2021',
+    ratio: '3 / 4',
+    img: './data/imgs/work-23-img-mvc17ij4.jpg',
+    hover: '#C6CE3B',
+    shots: [],
+    tags: ['设计项目'],
+    desc: '',
+  },
 ]
 
 export const getWork = (id) => works.find((w) => String(w.id) === String(id))

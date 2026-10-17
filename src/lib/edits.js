@@ -96,11 +96,11 @@ export function useEditing() {
 // ---------- 作品管理：编辑与新增作品（同 localStorage 存储） ----------
 import { works as baseWorks } from '../data/works'
 
-// 新增作品占位封面：深色底 + NEW 字样（部署时由真实图片替换）
+// 新增作品占位封面：纯深色底，无文字（避免加载过程闪现 NEW 字样，部署时由真实图片替换）
 export const NEW_WORK_PLACEHOLDER =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"><rect width="900" height="1200" fill="#1b1916"/><text x="450" y="580" font-family="sans-serif" font-size="72" letter-spacing="8" fill="#dcc394" text-anchor="middle">NEW</text><text x="450" y="660" font-family="sans-serif" font-size="30" letter-spacing="4" fill="#8a8378" text-anchor="middle">WORK</text></svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"><rect width="900" height="1200" fill="#1b1916"/></svg>`
   )
 
 // 构建「基础作品 + 本地新增作品」的完整列表（编辑覆盖 title/cat/en）
