@@ -1176,6 +1176,30 @@ textarea {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
+.adminpanel {
+  position: relative;
+}
+.ap-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(236, 230, 220, 0.22);
+  border-radius: 50%;
+  background: rgba(17, 15, 13, 0.7);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s, transform 0.25s;
+}
+.ap-close:hover {
+  background: var(--accent-bright);
+  color: #1b1916;
+  transform: rotate(90deg);
+}
 .adminpanel__head {
   padding: 22px 20px 16px;
   border-bottom: 1px solid rgba(236, 230, 220, 0.1);
@@ -1376,6 +1400,14 @@ textarea {
   transition: border-color 0.25s, color 0.25s;
 }
 .ap-up:hover { border-color: var(--accent); color: var(--accent); }
+.ap-btn--save {
+  margin-top: 10px;
+  background: none;
+  color: var(--accent-bright);
+  border: 1px solid rgba(220, 195, 148, 0.45);
+  font-weight: 600;
+}
+.ap-btn--save:hover { background: rgba(220, 195, 148, 0.12); opacity: 1; }
 .ap-row__del {
   margin-top: 10px;
   padding: 7px;

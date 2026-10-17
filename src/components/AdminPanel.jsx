@@ -52,18 +52,29 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
     dcat: work.dcat ?? work.cat,
   }))
   const setDk = (k) => (e) => setD((p) => ({ ...p, [k]: e.target.value }))
+  const [saved, setSaved] = useState(false)
+  // 提交该作品行的文字草稿（保存作品 / 点完成时都会调用）
+  const commitRow = () => {
+    if (d.title !== work.title) applyEdit(`work-${id}-title`, d.title)
+    if (d.cat !== work.cat) applyEdit(`work-${id}-cat`, d.cat)
+    if (d.year !== (work.year ?? '')) applyEdit(`work-${id}-year`, d.year)
+    if (d.dtitle !== (work.dtitle ?? work.title)) applyEdit(`work-${id}-dtitle`, d.dtitle)
+    if (d.dcat !== (work.dcat ?? work.cat)) applyEdit(`work-${id}-dcat`, d.dcat)
+  }
   // 监听「完成」事件统一提交草稿
   useEffect(() => {
-    const commit = () => {
-      if (d.title !== work.title) applyEdit(`work-${id}-title`, d.title)
-      if (d.cat !== work.cat) applyEdit(`work-${id}-cat`, d.cat)
-      if (d.year !== (work.year ?? '')) applyEdit(`work-${id}-year`, d.year)
-      if (d.dtitle !== (work.dtitle ?? work.title)) applyEdit(`work-${id}-dtitle`, d.dtitle)
-      if (d.dcat !== (work.dcat ?? work.cat)) applyEdit(`work-${id}-dcat`, d.dcat)
-    }
+    const commit = () => commitRow()
     window.addEventListener('admin-commit', commit)
     return () => window.removeEventListener('admin-commit', commit)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d, work, id])
+  // 单独保存当前作品：立即提交草稿并推送云端（无需等「完成」）
+  const onSave = () => {
+    commitRow()
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1500)
+    syncNow().catch(() => {})
+  }
   const shots = work.shots || []
 
   const onCover = async (e) => {
@@ -265,6 +276,9 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
               新增作品请上传封面与详情图（本机即时预览）；导出数据发回部署后对所有人可见。
             </p>
           )}
+          <button className="ap-btn ap-btn--save" onClick={onSave}>
+            {saved ? '✓ 已保存' : '保存作品'}
+          </button>
           <button className="ap-row__del" onClick={onDelete}>
             删除作品
           </button>
@@ -356,6 +370,14 @@ export default function AdminPanel() {
 
   return (
     <aside className="adminpanel">
+      <button
+        className="ap-close"
+        onClick={handleDone}
+        title="关闭后台（等同完成）"
+        aria-label="关闭后台"
+      >
+        ×
+      </button>
       <div className="adminpanel__head">
         <h2>作品管理</h2>
         <p>
