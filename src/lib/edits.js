@@ -573,6 +573,13 @@ export async function loadCloud() {
   }
   cloudEdits = data.edits && typeof data.edits === 'object' ? data.edits : {}
   cloudImages = data.images && typeof data.images === 'object' ? data.images : {}
+  // 兼容历史数据：旧上传路径带 docs/ 前缀，线上访问 404，统一规整为部署根相对路径
+  const norm = (v) => {
+    if (typeof v === 'string') return v.replace(/^\.\/docs\/data\/imgs\//, './data/imgs/')
+    if (Array.isArray(v)) return v.map(norm)
+    return v
+  }
+  for (const k of Object.keys(cloudImages)) cloudImages[k] = norm(cloudImages[k])
   cloudLoaded = true
   mergeAndNotify()
   notifyCloud()
@@ -688,7 +695,8 @@ async function ghPutImage(dataUrl, name) {
     }),
   })
   if (!res.ok) throw new Error(`IMG PUT ${res.status}`)
-  return `./${path}`
+  // GitHub Pages 部署根为 docs/，线上访问需去掉 docs/ 前缀
+  return `./data/imgs/${name}.${ext}`
 }
 // 删除云端图片文件
 async function ghDeleteImage(relPath) {
