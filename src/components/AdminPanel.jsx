@@ -317,11 +317,11 @@ export default function AdminPanel() {
     // 1) 先统一提交所有行的文字草稿（点「完成」才让修改在网站生效）
     window.dispatchEvent(new CustomEvent('admin-commit'))
     await new Promise((r) => setTimeout(r, 50))
-    // 2) 提交完成后同步云端（含自动上传未同步的本地图片）
+    // 2) 提交完成后同步云端：先上传本地图片（生成云端路径），再写数据文件，确保图片映射一并入库
     if (cloud.configured) {
       try {
-        await syncNow()
         await migrateCloudImages()
+        await syncNow()
       } catch {
         /* 同步失败不阻断退出后台 */
       }

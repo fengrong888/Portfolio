@@ -106,9 +106,19 @@ export const NEW_WORK_PLACEHOLDER =
 // 构建「基础作品 + 本地新增作品」的完整列表（编辑覆盖 title/cat/en）
 // 结果缓存：仅当编辑数据变化时重建，保证 useSyncExternalStore 快照引用稳定
 let worksCache = null
-// 按年份排序的固定顺序（最新在上、最老在下）：2026→2025→2024→2023→2022→2020
-const FIXED_ORDER = [9, 17, 1, 15, 19, 2, 3, 6, 13, 16, 18, 4, 5, 7, 8, 10, 14, 20, 12, 11]
-const ORDER_VERSION = 2
+// 按年份排序的固定顺序（最新在上、最老在下）：2026→2025→2024→2023→2022→2021→2020
+// v3：加入新作品 23（2021），修正手机端首次访问顺序
+const FIXED_ORDER = [23, 9, 17, 1, 15, 19, 2, 3, 6, 13, 16, 18, 4, 5, 7, 8, 10, 14, 20, 12, 11]
+const ORDER_VERSION = 3
+// 图片路径规整：历史错误路径带 docs/ 前缀（线上 404），统一转为部署根相对路径
+export function normalizeImgPath(v) {
+  if (typeof v === 'string') return v.replace(/^\.\/docs\/data\/imgs\//, './data/imgs/')
+  return v
+}
+function normalizeImgList(arr) {
+  if (!Array.isArray(arr)) return arr
+  return arr.map(normalizeImgPath)
+}
 function resolveOrder(S) {
   try {
     let v = 0
@@ -166,8 +176,8 @@ function computeWorks(live = false) {
           year: S[`work-${id}-year`] ?? base.year,
           dcat: S[`work-${id}-dcat`] ?? S[`work-${id}-cat`] ?? base.cat,
           dtitle: S[`work-${id}-dtitle`] ?? S[`work-${id}-title`] ?? base.title,
-          img: IMG[`work-${id}-img`] || base.img,
-          shots: upShots ? JSON.parse(upShots) : base.shots,
+          img: normalizeImgPath(IMG[`work-${id}-img`] || base.img),
+          shots: upShots ? normalizeImgList(JSON.parse(upShots)) : normalizeImgList(base.shots),
         }
       }
       // 新增作品（尚未提供图片，使用占位封面）
@@ -181,9 +191,9 @@ function computeWorks(live = false) {
         dcat: S[`work-${id}-dcat`] ?? S[`work-${id}-cat`] ?? '设计项目',
         dtitle: S[`work-${id}-dtitle`] ?? S[`work-${id}-title`] ?? `新作品 ${id}`,
         ratio: '3 / 4',
-        img: imageStore[`work-${id}-img`] || NEW_WORK_PLACEHOLDER,
+        img: normalizeImgPath(imageStore[`work-${id}-img`] || NEW_WORK_PLACEHOLDER),
         hover: '#C6CE3B',
-        shots: nShots ? JSON.parse(nShots) : [],
+        shots: nShots ? normalizeImgList(JSON.parse(nShots)) : [],
         tags: [],
         desc: '',
         _new: true,
