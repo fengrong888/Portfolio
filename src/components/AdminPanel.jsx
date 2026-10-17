@@ -179,23 +179,25 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
 
           <div className="ap-row__imgs">
             <span className="ap-row__imgs-label">封面：</span>
-            {hasCover && (
+            <div className="ap-cover-box">
               <img
                 className="ap-cover-prev"
-                src={getStoredImage(`work-${id}-img`)}
+                src={hasCover ? getStoredImage(`work-${id}-img`) : work.img}
                 alt="封面预览"
                 draggable={false}
               />
-            )}
-            <label className="ap-up">
-              <input ref={coverRef} type="file" accept="image/*" onChange={onCover} hidden />
-              {upCover ? '✓ 封面已上传' : '上传封面'}
-            </label>
-            {hasCover && (
-              <button className="ap-rm" onClick={() => removeImage(`work-${id}-img`)}>
-                移除已上传封面
+              <label className="ap-cover-up" title="上传图片">
+                <input ref={coverRef} type="file" accept="image/*" onChange={onCover} hidden />
+                {upCover ? '✓ 已上传' : '上传图片'}
+              </label>
+              <button
+                className="ap-cover-rm"
+                title="移除封面"
+                onClick={() => removeImage(`work-${id}-img`)}
+              >
+                ×
               </button>
-            )}
+            </div>
           </div>
 
           <div className="ap-shots">
