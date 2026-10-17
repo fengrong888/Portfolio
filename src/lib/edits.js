@@ -110,10 +110,15 @@ let worksCache = null
 // v3：加入新作品 23（2021），修正手机端首次访问顺序
 const FIXED_ORDER = [23, 9, 17, 1, 15, 19, 2, 3, 6, 13, 16, 18, 4, 5, 7, 8, 10, 14, 20, 12, 11]
 const ORDER_VERSION = 3
-// 图片路径规整：历史错误路径带 docs/ 前缀（线上 404），统一转为部署根相对路径
+// 图片路径规整：
+// - 历史错误路径带 docs/ 前缀（线上 404）→ 转为部署根相对路径
+// - 内置作品图 ./works/ 已由 JPG 批量转为 WebP，历史引用仍指向 .jpg → 统一转 .webp
+// - ./data/imgs/ 下的用户上传图保留原格式
 export function normalizeImgPath(v) {
-  if (typeof v === 'string') return v.replace(/^\.\/docs\/data\/imgs\//, './data/imgs/')
-  return v
+  if (typeof v !== 'string') return v
+  let s = v.replace(/^\.\/docs\/data\/imgs\//, './data/imgs/')
+  s = s.replace(/^\.\/works\/(.+?)\.jpg$/, './works/$1.webp')
+  return s
 }
 function normalizeImgList(arr) {
   if (!Array.isArray(arr)) return arr

@@ -398,7 +398,7 @@ export const works = [
     cat: '品牌设计',
     year: '2021',
     ratio: '3 / 4',
-    img: './data/imgs/work-23-img-mvc17ij4.webp',
+    img: './data/imgs/work-23-img-mvc1r9di.jpg',
     hover: '#C6CE3B',
     shots: [],
     tags: ['设计项目'],
