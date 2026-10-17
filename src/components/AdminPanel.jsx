@@ -369,7 +369,9 @@ export default function AdminPanel() {
   }
 
   return (
-    <aside className="adminpanel">
+    <>
+      <div className="adminpanel__backdrop" aria-hidden="true" onClick={handleDone} />
+      <aside className="adminpanel">
       <button
         className="ap-close"
         onClick={handleDone}
@@ -446,6 +448,7 @@ export default function AdminPanel() {
           完成（自动同步）
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
