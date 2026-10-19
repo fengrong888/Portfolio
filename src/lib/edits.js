@@ -225,6 +225,8 @@ function invalidateWorks() {
 // 作品排序：拖拽调整后写入 work-order（JSON 数组），部署时按此固化
 export function setWorkOrder(ids) {
   applyEdit('work-order', JSON.stringify(ids))
+  // 排序（拖拽/新增作品排前）属于明确操作，自动同步云端，无需手动导出
+  queueSync(500)
 }
 export const getWorkOrder = () => {
   try {
