@@ -35,6 +35,8 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const [open, setOpen] = useState(false)
   const [upCover, setUpCover] = useState(false)
   const [upShots, setUpShots] = useState(false)
+  // 上传中：'cover' | 'shots' | 'insert' | null
+  const [busy, setBusy] = useState(null)
   const [shotDrag, setShotDrag] = useState(null) // 详情图拖拽：起始 index
   const [shotOver, setShotOver] = useState(null) // 详情图拖拽：悬停目标 index
   const coverRef = useRef(null)
@@ -80,20 +82,30 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const onCover = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const dataUrl = await compressImage(file, 700, 0.85)
-    await putImage(`work-${id}-img`, dataUrl)
-    setUpCover(true)
-    setTimeout(() => setUpCover(false), 1500)
+    setBusy('cover')
+    try {
+      const dataUrl = await compressImage(file, 700, 0.85)
+      await putImage(`work-${id}-img`, dataUrl)
+      setUpCover(true)
+      setTimeout(() => setUpCover(false), 1600)
+    } finally {
+      setBusy(null)
+    }
     if (coverRef.current) coverRef.current.value = ''
   }
 
   const onShots = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    const urls = await Promise.all(files.map((f) => compressImage(f, 3000, 1.0)))
-    await putImage(`work-${id}-shots`, JSON.stringify(urls))
-    setUpShots(true)
-    setTimeout(() => setUpShots(false), 1500)
+    setBusy('shots')
+    try {
+      const urls = await Promise.all(files.map((f) => compressImage(f, 3000, 1.0)))
+      await putImage(`work-${id}-shots`, JSON.stringify(urls))
+      setUpShots(true)
+      setTimeout(() => setUpShots(false), 1600)
+    } finally {
+      setBusy(null)
+    }
     if (shotsRef.current) shotsRef.current.value = ''
   }
 
@@ -101,8 +113,13 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const onInsert = async (e, index) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const dataUrl = await compressImage(file, 3000, 1.0)
-    await insertShot(id, shots, index, dataUrl)
+    setBusy('insert')
+    try {
+      const dataUrl = await compressImage(file, 3000, 1.0)
+      await insertShot(id, shots, index, dataUrl)
+    } finally {
+      setBusy(null)
+    }
     if (insertRef.current) insertRef.current.value = ''
   }
 
@@ -186,6 +203,15 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
                 alt="封面预览"
                 draggable={false}
               />
+              {busy === 'cover' && (
+                <div className="ap-cover-mask">
+                  <span className="ap-spinner" />
+                  <span>正在上传…</span>
+                </div>
+              )}
+              {upCover && busy !== 'cover' && (
+                <div className="ap-cover-done">✓ 上传成功</div>
+              )}
               <label className="ap-cover-up" title="上传图片">
                 <input ref={coverRef} type="file" accept="image/*" onChange={onCover} hidden />
                 {upCover ? '✓ 已上传' : '上传图片'}
@@ -263,7 +289,11 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
               ))}
               <label className="ap-up ap-up--tail" title="末尾追加">
                 <input ref={shotsRef} type="file" accept="image/*" multiple onChange={onShots} hidden />
-                {upShots ? '✓ 已上传' : '＋ 批量上传详情图'}
+                {busy === 'shots'
+                  ? '上传中…'
+                  : upShots
+                    ? '✓ 已上传'
+                    : '＋ 批量上传详情图'}
               </label>
             </div>
             {hasShots && (
