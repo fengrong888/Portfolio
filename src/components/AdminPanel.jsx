@@ -309,11 +309,16 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
                 ))}
                 <label className="ap-up ap-up--tail" title="末尾追加（新增，不覆盖已有）">
                   <input ref={shotsRef} type="file" accept="image/*" multiple onChange={onShots} hidden />
-                  {busy === 'shots'
-                    ? '上传中…'
-                    : upShots
-                      ? '✓ 已上传'
-                      : '＋ 批量上传详情图'}
+                  {busy === 'shots' ? (
+                    <>
+                      <span className="ap-up-spin" />
+                      <span>上传中…</span>
+                    </>
+                  ) : upShots ? (
+                    '✓ 已上传'
+                  ) : (
+                    '＋ 批量上传详情图'
+                  )}
                 </label>
               </div>
               <button
