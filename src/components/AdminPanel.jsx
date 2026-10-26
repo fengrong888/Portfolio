@@ -29,7 +29,7 @@ import {
 // 作品管理面板（Shift+E + 密码验证后打开）：
 // 编辑标题/类别/英文、上传封面与详情图、逐张管理详情图（删除/前后插入）、
 // 拖拽调整作品顺序、新增/删除作品（带确认）、导出完整数据发回固化部署。
-function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }) {
+function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, onDirtyChange }) {
   const id = work.id
   const [open, setOpen] = useState(false)
   const [upCover, setUpCover] = useState(false)
@@ -53,6 +53,18 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
     dtitle: work.dtitle ?? work.title,
     dcat: work.dcat ?? work.cat,
   }))
+  // 是否有未提交的文字修改（用于关闭时提醒保存）
+  const dirty = !!(
+    d.title !== work.title ||
+    d.cat !== work.cat ||
+    d.year !== (work.year ?? '') ||
+    d.dtitle !== (work.dtitle ?? work.title) ||
+    d.dcat !== (work.dcat ?? work.cat)
+  )
+  useEffect(() => {
+    onDirtyChange?.(id, dirty)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d, work, id])
   const setDk = (k) => (e) => setD((p) => ({ ...p, [k]: e.target.value }))
   const [saved, setSaved] = useState(false)
   // 提交该作品行的文字草稿（保存作品 / 点完成时都会调用）
@@ -362,6 +374,11 @@ export default function AdminPanel() {
   const cloud = useCloudStatus()
   const [tok, setTok] = useState(getCloudToken())
   const [migMsg, setMigMsg] = useState('')
+  // 各作品行是否有未提交的文字修改（关闭时提醒保存）
+  const [dirtySet, setDirtySet] = useState({})
+  const anyDirty = Object.values(dirtySet).some(Boolean)
+  const onDirtyChange = (id, dirty) =>
+    setDirtySet((prev) => (prev[id] === dirty ? prev : { ...prev, [id]: dirty }))
 
   const handleSaveToken = async () => {
     setCloudToken(tok)
@@ -393,8 +410,33 @@ export default function AdminPanel() {
     }
     setEditing(false)
   }
-  // 右上角 ×：立即提交草稿并关闭面板，云端同步放到后台继续，点按不卡顿
+  // 右上角 ×：若有未保存的文字修改先提醒；确认保存则提交草稿并关闭（云端同步后台继续），放弃则直接关闭
   const handleClose = () => {
+    if (anyDirty) {
+      const saveFirst = window.confirm(
+        '有修改尚未保存，是否保存并关闭？\n\n点「确定」= 保存并关闭\n点「取消」= 继续编辑'
+      )
+      if (saveFirst) {
+        window.dispatchEvent(new CustomEvent('admin-commit'))
+        if (cloud.configured) {
+          ;(async () => {
+            try {
+              await migrateCloudImages()
+              await syncNow()
+            } catch { /* 后台同步失败不影响关闭 */ }
+          })()
+        }
+        setEditing(false)
+        return
+      }
+      // 未选择保存：再确认是否放弃修改直接关闭
+      const discard = window.confirm(
+        '放弃未保存的修改并直接关闭？\n\n点「确定」= 不保存，直接关闭\n点「取消」= 返回后台继续编辑'
+      )
+      if (!discard) return
+      setEditing(false)
+      return
+    }
     window.dispatchEvent(new CustomEvent('admin-commit'))
     if (cloud.configured) {
       ;(async () => {
@@ -475,6 +517,7 @@ export default function AdminPanel() {
             onDragOver={setOverId}
             onDrop={handleDrop}
             dragState={overId}
+            onDirtyChange={onDirtyChange}
           />
         ))}
       </div>
