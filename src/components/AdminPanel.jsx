@@ -17,7 +17,6 @@ import {
   useEditsRev,
   setWorkOrder,
   deleteShot,
-  insertShot,
   moveShot,
   exportAllData,
   getCloudToken,
@@ -42,6 +41,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
   const coverRef = useRef(null)
   const shotsRef = useRef(null)
   const insertRef = useRef(null) // 记录待插入位置：{ index }
+  const shotsListRef = useRef(null) // 详情图横排列表（左右按钮滚动）
   useEditsRev()
   const hasCover = !!getStoredImage(`work-${id}-img`)
   const hasShots = !!getStoredImage(`work-${id}-shots`)
@@ -100,7 +100,8 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
     setBusy('shots')
     try {
       const urls = await Promise.all(files.map((f) => compressImage(f, 3000, 1.0)))
-      await putImage(`work-${id}-shots`, JSON.stringify(urls))
+      // 新增追加：保留已有详情图，新图排在末尾
+      await putImage(`work-${id}-shots`, JSON.stringify([...shots, ...urls]))
       setUpShots(true)
       setTimeout(() => setUpShots(false), 1600)
     } finally {
@@ -109,18 +110,27 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
     if (shotsRef.current) shotsRef.current.value = ''
   }
 
-  // 单张插入：index 之前（index 为 shots.length 时表示末尾追加）
+  // 多张插入：index 位置一次插入多张（index 为 shots.length 时表示末尾追加）
   const onInsert = async (e, index) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
     setBusy('insert')
     try {
-      const dataUrl = await compressImage(file, 3000, 1.0)
-      await insertShot(id, shots, index, dataUrl)
+      const urls = await Promise.all(files.map((f) => compressImage(f, 3000, 1.0)))
+      const next = [...shots.slice(0, index), ...urls, ...shots.slice(index)]
+      await putImage(`work-${id}-shots`, JSON.stringify(next))
     } finally {
       setBusy(null)
     }
     if (insertRef.current) insertRef.current.value = ''
+  }
+
+  // 详情图列表左右移动
+  const scrollShots = (dir) => {
+    const el = shotsListRef.current
+    if (!el) return
+    const step = Math.max(el.clientWidth * 0.75, 160)
+    el.scrollBy({ left: dir * step, behavior: 'smooth' })
   }
 
   const onDeleteShot = (index) => {
@@ -231,70 +241,88 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState }
               详情图（{shots.length} 张）：拖动缩略图可调换顺序；每张可删除，或在任意一张前 / 后插入新图
             </span>
             {shots.length === 0 && <p className="ap-row__note">暂无详情图——可在下方批量上传，或插入单张。</p>}
-            <div className="ap-shots__list">
-              {shots.map((s, i) => (
-                <div
-                  className={`ap-shot${shotOver === i ? ' ap-shot--over' : ''}${
-                    shotDrag === i ? ' ap-shot--drag' : ''
-                  }`}
-                  key={`${s.slice(0, 24)}-${i}`}
-                  draggable
-                  onDragStart={(e) => {
-                    e.stopPropagation()
-                    e.dataTransfer.effectAllowed = 'move'
-                    setShotDrag(i)
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setShotOver(i)
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    if (shotDrag !== null && shotDrag !== i) moveShot(id, shots, shotDrag, i)
-                    setShotDrag(null)
-                    setShotOver(null)
-                  }}
-                  onDragEnd={() => {
-                    setShotDrag(null)
-                    setShotOver(null)
-                  }}
-                >
-                  <img src={s} alt={`详情图 ${i + 1}`} draggable={false} />
-                  <button className="ap-shot__del" title="删除此图" onClick={() => onDeleteShot(i)}>
-                    ×
-                  </button>
-                  <label className="ap-shot__ins ap-shot__ins--before" title="在此图前插入">
-                    <input
-                      ref={insertRef}
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={(e) => onInsert(e, i)}
-                    />
-                    ＋
-                  </label>
-                  <label className="ap-shot__ins ap-shot__ins--after" title="在此图后插入">
-                    <input
-                      ref={insertRef}
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={(e) => onInsert(e, i + 1)}
-                    />
-                    ＋
-                  </label>
-                </div>
-              ))}
-              <label className="ap-up ap-up--tail" title="末尾追加">
-                <input ref={shotsRef} type="file" accept="image/*" multiple onChange={onShots} hidden />
-                {busy === 'shots'
-                  ? '上传中…'
-                  : upShots
-                    ? '✓ 已上传'
-                    : '＋ 批量上传详情图'}
-              </label>
+            <div className="ap-shots__wrap">
+              <button
+                className="ap-shots__nav ap-shots__nav--prev"
+                title="向左移动"
+                onClick={() => scrollShots(-1)}
+              >
+                ‹
+              </button>
+              <div className="ap-shots__list" ref={shotsListRef}>
+                {shots.map((s, i) => (
+                  <div
+                    className={`ap-shot${shotOver === i ? ' ap-shot--over' : ''}${
+                      shotDrag === i ? ' ap-shot--drag' : ''
+                    }`}
+                    key={`${s.slice(0, 24)}-${i}`}
+                    draggable
+                    onDragStart={(e) => {
+                      e.stopPropagation()
+                      e.dataTransfer.effectAllowed = 'move'
+                      setShotDrag(i)
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setShotOver(i)
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (shotDrag !== null && shotDrag !== i) moveShot(id, shots, shotDrag, i)
+                      setShotDrag(null)
+                      setShotOver(null)
+                    }}
+                    onDragEnd={() => {
+                      setShotDrag(null)
+                      setShotOver(null)
+                    }}
+                  >
+                    <img src={s} alt={`详情图 ${i + 1}`} draggable={false} />
+                    <button className="ap-shot__del" title="删除此图" onClick={() => onDeleteShot(i)}>
+                      ×
+                    </button>
+                    <label className="ap-shot__ins ap-shot__ins--before" title="在此图前插入多张">
+                      <input
+                        ref={insertRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        hidden
+                        onChange={(e) => onInsert(e, i)}
+                      />
+                      ＋
+                    </label>
+                    <label className="ap-shot__ins ap-shot__ins--after" title="在此图后插入多张">
+                      <input
+                        ref={insertRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        hidden
+                        onChange={(e) => onInsert(e, i + 1)}
+                      />
+                      ＋
+                    </label>
+                  </div>
+                ))}
+                <label className="ap-up ap-up--tail" title="末尾追加（新增，不覆盖已有）">
+                  <input ref={shotsRef} type="file" accept="image/*" multiple onChange={onShots} hidden />
+                  {busy === 'shots'
+                    ? '上传中…'
+                    : upShots
+                      ? '✓ 已上传'
+                      : '＋ 批量上传详情图'}
+                </label>
+              </div>
+              <button
+                className="ap-shots__nav ap-shots__nav--next"
+                title="向右移动"
+                onClick={() => scrollShots(1)}
+              >
+                ›
+              </button>
             </div>
             {hasShots && (
               <button className="ap-rm" onClick={() => removeImage(`work-${id}-shots`)}>
