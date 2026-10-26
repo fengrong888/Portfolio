@@ -391,6 +391,8 @@ export default function AdminPanel() {
   const anyDirty = Object.values(dirtySet).some(Boolean)
   const onDirtyChange = (id, dirty) =>
     setDirtySet((prev) => (prev[id] === dirty ? prev : { ...prev, [id]: dirty }))
+  // 「完成」同步中的转圈动效
+  const [syncing, setSyncing] = useState(false)
 
   const handleSaveToken = async () => {
     setCloudToken(tok)
@@ -408,17 +410,20 @@ export default function AdminPanel() {
     }
   }
   const handleDone = async () => {
+    if (syncing) return
     // 1) 先统一提交所有行的文字草稿（点「完成」才让修改在网站生效）
     window.dispatchEvent(new CustomEvent('admin-commit'))
     await new Promise((r) => setTimeout(r, 50))
     // 2) 提交完成后同步云端：先上传本地图片（生成云端路径），再写数据文件，确保图片映射一并入库
     if (cloud.configured) {
+      setSyncing(true)
       try {
         await migrateCloudImages()
         await syncNow()
       } catch {
         /* 同步失败不阻断退出后台 */
       }
+      setSyncing(false)
     }
     setEditing(false)
   }
@@ -576,8 +581,15 @@ export default function AdminPanel() {
         >
           恢复默认
         </button>
-        <button className="ap-btn ap-btn--done" onClick={handleDone}>
-          完成（自动同步）
+        <button className="ap-btn ap-btn--done" onClick={handleDone} disabled={syncing}>
+          {syncing ? (
+            <>
+              <span className="ap-up-spin" />
+              同步中…
+            </>
+          ) : (
+            '完成（自动同步）'
+          )}
         </button>
       </div>
     </aside>

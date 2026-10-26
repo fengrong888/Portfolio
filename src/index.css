@@ -1309,8 +1309,13 @@ textarea {
   font-family: var(--font-body);
   cursor: pointer;
   transition: opacity 0.25s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
 }
 .ap-btn:hover { opacity: 0.85; }
+.ap-btn:disabled { opacity: 0.6; cursor: wait; }
 .ap-btn--add { background: var(--accent-bright); color: #1b1916; font-weight: 600; }
 .ap-btn--export { background: rgba(236, 230, 220, 0.1); color: var(--ink); border: 1px solid rgba(236, 230, 220, 0.2); }
 .ap-btn--reset { background: none; color: var(--ink-faint); font-size: 12px; }
