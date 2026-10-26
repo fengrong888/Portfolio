@@ -567,20 +567,36 @@ async function ghFetch(path, init) {
 }
 
 // 读取云端数据：优先 GitHub API（实时返回，绕过 Pages CDN 缓存，修改后立即生效）；
-// API 不可达时回退站内数据文件（可能有 1 分钟缓存延迟）。
+// API 不可达时回退 raw CDN，再回退站内数据文件。
 export async function loadCloud() {
   let data = null
+  // 优先带令牌认证读取（避免匿名接口限流导致读不到云端数据）
+  const headers = { Accept: 'application/vnd.github+json' }
+  if (token) headers.Authorization = `Bearer ${token}`
   try {
     const res = await fetch(
       `https://api.github.com/repos/${CLOUD_REPO}/contents/${CLOUD_FILE}`,
-      { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' }
+      { headers, cache: 'no-store' }
     )
     if (res.ok) {
       const j = await res.json()
       data = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g, '')))))
     }
   } catch {
-    /* 回退站内文件 */
+    /* 回退 raw CDN */
+  }
+  if (!data) {
+    try {
+      // raw CDN 兜底（带时间戳防缓存）
+      const res = await fetch(
+        `https://raw.githubusercontent.com/${CLOUD_REPO}/main/${CLOUD_FILE}?t=${Date.now()}`,
+        { cache: 'no-store' }
+      )
+      if (!res.ok) throw new Error(`raw ${res.status}`)
+      data = await res.json()
+    } catch {
+      /* 回退站内文件 */
+    }
   }
   if (!data) {
     try {
