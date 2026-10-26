@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'motion/react'
 import gsap from 'gsap'
-import { useEditing } from '../lib/edits'
+import { useEditing, extractDominantColor } from '../lib/edits'
 import Editable from './Editable'
 
 // 悬停动效（GSAP）：纯色层淡入淡出；简介三行依次上移淡入；另叠加 3D 倾斜
@@ -18,6 +18,14 @@ export default function WorkCard({ work, index }) {
   const introRef = useRef(null)
   const [inView, setInView] = useState(false)
   const editing = useEditing()
+  // 后台上传过封面的作品：悬停纯色自动提取封面主色（替代预置 hover 色）
+  const isUploadedCover = typeof work.img === 'string' && work.img.indexOf('./data/imgs/') === 0
+  const [tint, setTint] = useState(null)
+  useEffect(() => {
+    if (!isUploadedCover) return
+    extractDominantColor(work.img).then((c) => c && setTint(c))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const rotateX = useSpring(useMotionValue(0), springValues)
   const rotateY = useSpring(useMotionValue(0), springValues)
@@ -137,7 +145,12 @@ export default function WorkCard({ work, index }) {
         <div className="card__img-p">
           <img className="card__img" ref={imgRef} src={work.img} alt={work.title} loading="lazy" decoding="async" />
         </div>
-        <div className="card__fill" aria-hidden="true" ref={fillRef} />
+        <div
+          className="card__fill"
+          aria-hidden="true"
+          ref={fillRef}
+          style={tint ? { background: tint } : undefined}
+        />
         <div className="card__intro" ref={introRef}>
           <div className="card__intro-cat">
             <Editable k={`work-${work.id}-cat`} fallback={work.cat} />
