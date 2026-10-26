@@ -391,8 +391,9 @@ export default function AdminPanel() {
   const anyDirty = Object.values(dirtySet).some(Boolean)
   const onDirtyChange = (id, dirty) =>
     setDirtySet((prev) => (prev[id] === dirty ? prev : { ...prev, [id]: dirty }))
-  // 「完成」同步中的转圈动效
+  // 「完成」同步中的转圈动效 + 同步完成的成功动效
   const [syncing, setSyncing] = useState(false)
+  const [doneMsg, setDoneMsg] = useState(false)
 
   const handleSaveToken = async () => {
     setCloudToken(tok)
@@ -410,7 +411,7 @@ export default function AdminPanel() {
     }
   }
   const handleDone = async () => {
-    if (syncing) return
+    if (syncing || doneMsg) return
     // 1) 先统一提交所有行的文字草稿（点「完成」才让修改在网站生效）
     window.dispatchEvent(new CustomEvent('admin-commit'))
     await new Promise((r) => setTimeout(r, 50))
@@ -424,6 +425,10 @@ export default function AdminPanel() {
         /* 同步失败不阻断退出后台 */
       }
       setSyncing(false)
+      // 同步完成动效：短暂显示「✓ 已同步」后再关闭
+      setDoneMsg(true)
+      await new Promise((r) => setTimeout(r, 900))
+      setDoneMsg(false)
     }
     setEditing(false)
   }
@@ -581,11 +586,16 @@ export default function AdminPanel() {
         >
           恢复默认
         </button>
-        <button className="ap-btn ap-btn--done" onClick={handleDone} disabled={syncing}>
+        <button className="ap-btn ap-btn--done" onClick={handleDone} disabled={syncing || doneMsg}>
           {syncing ? (
             <>
               <span className="ap-up-spin" />
               同步中…
+            </>
+          ) : doneMsg ? (
+            <>
+              <span className="ap-done-check">✓</span>
+              已同步
             </>
           ) : (
             '完成（自动同步）'

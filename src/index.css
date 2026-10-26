@@ -1316,6 +1316,20 @@ textarea {
 }
 .ap-btn:hover { opacity: 0.85; }
 .ap-btn:disabled { opacity: 0.6; cursor: wait; }
+/* 同步完成打勾动效 */
+.ap-done-check {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #4caf7d;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  animation: ap-pop 0.3s ease;
+}
 .ap-btn--add { background: var(--accent-bright); color: #1b1916; font-weight: 600; }
 .ap-btn--export { background: rgba(236, 230, 220, 0.1); color: var(--ink); border: 1px solid rgba(236, 230, 220, 0.2); }
 .ap-btn--reset { background: none; color: var(--ink-faint); font-size: 12px; }
