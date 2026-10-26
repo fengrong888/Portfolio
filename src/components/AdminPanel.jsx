@@ -18,6 +18,7 @@ import {
   setWorkOrder,
   deleteShot,
   moveShot,
+  extractDominantColor,
   exportAllData,
   getCloudToken,
   setCloudToken,
@@ -42,6 +43,13 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const shotsRef = useRef(null)
   const insertRef = useRef(null) // 记录待插入位置：{ index }
   const shotsListRef = useRef(null) // 详情图横排列表（左右按钮滚动）
+  // 悬停纯色：从作品封面/详情图自动提取主色（缓存，每行只提取一次）
+  const [tint, setTint] = useState(null)
+  const onCoverHover = () => {
+    if (tint) return
+    const src = hasCover ? getStoredImage(`work-${id}-img`) : shots[0] || work.img
+    extractDominantColor(src).then((c) => c && setTint(c))
+  }
   useEditsRev()
   const hasCover = !!getStoredImage(`work-${id}-img`)
   const hasShots = !!getStoredImage(`work-${id}-shots`)
@@ -218,13 +226,17 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
 
           <div className="ap-row__imgs">
             <span className="ap-row__imgs-label">封面：</span>
-            <div className="ap-cover-box">
+            <div
+              className="ap-cover-box"
+              onMouseEnter={onCoverHover}
+            >
               <img
                 className="ap-cover-prev"
                 src={hasCover ? getStoredImage(`work-${id}-img`) : work.img}
                 alt="封面预览"
                 draggable={false}
               />
+              <div className="ap-cover-tint" style={{ background: tint || 'rgba(0,0,0,0)' }} />
               {busy === 'cover' && (
                 <div className="ap-cover-mask">
                   <span className="ap-spinner" />

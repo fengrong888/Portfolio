@@ -1390,6 +1390,16 @@ textarea {
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: opacity 0.28s ease;
+}
+/* 悬停纯色：自动匹配作品主色调（背景层，hover 时覆盖图片） */
+.ap-cover-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  pointer-events: none;
 }
 .ap-cover-up {
   position: absolute;
@@ -1397,7 +1407,7 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.52);
+  background: rgba(0, 0, 0, 0.3);
   color: #f3ead9;
   font-size: 13px;
   font-weight: 600;
@@ -1408,6 +1418,8 @@ textarea {
 }
 @media (hover: hover) {
   .ap-cover-box:hover .ap-cover-up { opacity: 1; }
+  .ap-cover-box:hover .ap-cover-prev { opacity: 0; }
+  .ap-cover-box:hover .ap-cover-tint { opacity: 1; }
 }
 .ap-cover-box:has(input:focus-visible) .ap-cover-up { opacity: 1; }
 .ap-cover-rm {

@@ -868,3 +868,40 @@ async function removeCloudLinked(key, value) {
     }
   }
 }
+
+// 从图片提取主色调（过滤近黑/近白/透明，取平均色并提亮 30% 用于纯色底）
+export function extractDominantColor(src) {
+  return new Promise((resolve) => {
+    if (!src || typeof src !== 'string') { resolve(null); return }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas')
+        c.width = c.height = 24
+        const ctx = c.getContext('2d', { willReadFrequently: true })
+        ctx.drawImage(img, 0, 0, 24, 24)
+        const { data } = ctx.getImageData(0, 0, 24, 24)
+        let r = 0, g = 0, b = 0, n = 0
+        for (let i = 0; i < data.length; i += 4) {
+          const R = data[i], G = data[i + 1], B = data[i + 2], A = data[i + 3]
+          if (A < 128) continue
+          const mx = Math.max(R, G, B), mn = Math.min(R, G, B)
+          if (mx < 40) continue
+          if (mn > 215) continue
+          r += R; g += G; b += B; n++
+        }
+        if (!n) { resolve(null); return }
+        const blend = 0.72
+        const rr = Math.round(((r / n) * blend) + 255 * (1 - blend))
+        const gg = Math.round(((g / n) * blend) + 255 * (1 - blend))
+        const bb = Math.round(((b / n) * blend) + 255 * (1 - blend))
+        resolve(`rgb(${rr},${gg},${bb})`)
+      } catch {
+        resolve(null)
+      }
+    }
+    img.onerror = () => resolve(null)
+    img.src = src
+  })
+}
