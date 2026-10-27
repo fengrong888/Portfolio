@@ -707,16 +707,19 @@ export async function loadCloud() {
   notifyCloud()
 }
 
-// 合并规则：本地 edits 覆盖云端 edits（本地含最新未同步操作）
-// 例外：排序（work-order）以云端为准——云端=最近一次同步的权威顺序，
-// 避免旧设备本地残留的旧排序覆盖其他设备上传的最新排序
-// 合并结果同时写回本机 localStorage：下次离线/断网打开也保留最近一次云端数据
+// 合并规则：非编辑状态下「云端 = 全设备权威」——所有设备看到的内容与云端完全一致。
+// 本地历史残留（旧文字/旧排序）一律以云端为准，避免旧设备本地数据覆盖其他设备刚同步的最新内容。
+// 仅后台编辑中（editing=true）叠加本机草稿用于继续编辑；点「完成」后统一同步回云端。
+// 排序（work-order）无论何时都以云端为准（云端=最近一次同步的权威顺序）。
 function mergeAndNotify() {
-  edits = { ...cloudEdits, ...localEditsRaw() }
+  edits = { ...cloudEdits }
+  if (editing) {
+    edits = { ...edits, ...localEditsRaw() }
+  }
   if (cloudEdits && typeof cloudEdits['work-order'] === 'string') {
     edits['work-order'] = cloudEdits['work-order']
   }
-  persistLocal(edits)
+  if (!editing) persistLocal(edits)
   invalidateWorks()
   listeners.forEach((l) => l())
 }
