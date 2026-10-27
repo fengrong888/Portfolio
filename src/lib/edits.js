@@ -592,30 +592,42 @@ function cloudURL(path) {
   return `https://api.github.com/repos/${CLOUD_REPO}/contents/${path}`
 }
 async function ghFetch(path, init) {
-  const res = await fetch(cloudURL(path), {
+  const res = await fetchTimeout(cloudURL(path), {
     ...init,
     headers: {
       Accept: 'application/vnd.github+json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
-  })
+  }, 8000)
   // 令牌过期/无权限：自动标记，后台弹出重新输入窗口
   if (res.status === 401 || res.status === 403) markTokenExpired()
   return res
 }
 
+// 带超时的 fetch：GitHub 接口在国内网络经常长时间挂起，必须快速失败落到兜底数据
+async function fetchTimeout(url, options = {}, ms = 7000) {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), ms)
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 // 读取云端数据：优先 GitHub API（实时返回，绕过 Pages CDN 缓存，修改后立即生效）；
-// API 不可达时回退 raw CDN，再回退站内数据文件。
+// API 不可达时回退 raw CDN，再回退站内数据文件（GitHub Pages 托管仓库文件，天然最新）。
 export async function loadCloud() {
   let data = null
   // 优先带令牌认证读取（避免匿名接口限流导致读不到云端数据）
   const headers = { Accept: 'application/vnd.github+json' }
   if (token) headers.Authorization = `Bearer ${token}`
   try {
-    const res = await fetch(
+    const res = await fetchTimeout(
       `https://api.github.com/repos/${CLOUD_REPO}/contents/${CLOUD_FILE}`,
-      { headers, cache: 'no-store' }
+      { headers, cache: 'no-store' },
+      7000
     )
     if (res.ok) {
       const j = await res.json()
@@ -627,9 +639,10 @@ export async function loadCloud() {
   if (!data) {
     try {
       // raw CDN 兜底（带时间戳防缓存）
-      const res = await fetch(
+      const res = await fetchTimeout(
         `https://raw.githubusercontent.com/${CLOUD_REPO}/main/${CLOUD_FILE}?t=${Date.now()}`,
-        { cache: 'no-store' }
+        { cache: 'no-store' },
+        6000
       )
       if (!res.ok) throw new Error(`raw ${res.status}`)
       data = await res.json()
