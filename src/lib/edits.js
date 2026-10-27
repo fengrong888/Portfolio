@@ -702,6 +702,20 @@ export async function syncNow() {
     const merged = { ...cloudEdits, ...localEditsRaw() }
     // 云端图片路径映射（不含本地未同步的 dataURL）
     const imgs = { ...cloudImages }
+    // 补回本机已上传为云端路径的图片：刷新后内存 cloudImages 可能丢失映射，
+    // 但 imageStore 里仍存着 ./data/imgs/ 云端路径，从这里取回一并写入，避免图片引用断链
+    for (const [k, v] of Object.entries(imageStore)) {
+      if (typeof v === 'string' && v.startsWith('./data/imgs/')) {
+        imgs[k] = v
+      } else if (typeof v === 'string' && v.startsWith('[')) {
+        try {
+          const arr = JSON.parse(v)
+          if (Array.isArray(arr) && arr.some((x) => typeof x === 'string' && x.startsWith('./data/imgs/'))) {
+            imgs[k] = arr
+          }
+        } catch { /* ignore */ }
+      }
+    }
     await ghPutJson(merged, imgs)
     cloudEdits = merged
     cloudImages = imgs
