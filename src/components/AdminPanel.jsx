@@ -22,6 +22,7 @@ import {
   exportAllData,
   getCloudToken,
   setCloudToken,
+  checkTokenValidity,
   syncNow,
   migrateCloudImages,
   useCloudStatus,
@@ -386,6 +387,12 @@ export default function AdminPanel() {
   const cloud = useCloudStatus()
   const [tok, setTok] = useState(getCloudToken())
   const [migMsg, setMigMsg] = useState('')
+
+  // 打开后台即校验令牌有效性：过期时显示重新输入窗口
+  useEffect(() => {
+    checkTokenValidity()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // 各作品行是否有未提交的文字修改（关闭时提醒保存）
   const [dirtySet, setDirtySet] = useState({})
   const anyDirty = Object.values(dirtySet).some(Boolean)
@@ -399,11 +406,15 @@ export default function AdminPanel() {
     setCloudToken(tok)
     if (tok.trim()) {
       setMigMsg('正在连接云端…')
-      await syncNow()
+      const r = await syncNow()
+      if (!r.ok) {
+        setMigMsg(cloud.expired ? '⚠ 令牌已失效，请重新输入有效令牌' : `连接失败：${r.error || '网络问题'}`)
+        return
+      }
       // 首次连接后自动把本机已上传的图片静默推送到云端
       try {
-        const r = await migrateCloudImages()
-        setMigMsg(r.ok && r.migrated ? `✓ 已连接并同步 ${r.migrated} 张图片` : '✓ 已连接云端')
+        const m = await migrateCloudImages()
+        setMigMsg(m.ok && m.migrated ? `✓ 已连接并同步 ${m.migrated} 张图片` : '✓ 已连接云端')
       } catch {
         setMigMsg('✓ 已连接云端')
       }
@@ -551,7 +562,32 @@ export default function AdminPanel() {
         ))}
       </div>
 
-      {cloud.configured && (
+      {cloud.expired && (
+        <div className="adminpanel__cloud adminpanel__cloud--expired">
+          <h3>⚠ 令牌已失效，请重新输入</h3>
+          <p>
+            当前保存的云端令牌已过期或权限不足，导致作品无法同步到全网。
+            请重新粘贴有效的 GitHub 令牌（需勾选 Contents Read and write 权限）：
+          </p>
+          <input
+            className="ap-input"
+            type="password"
+            placeholder="GitHub 访问令牌 (PAT)"
+            value={tok}
+            onChange={(e) => setTok(e.target.value)}
+            autoComplete="off"
+          />
+          <div className="adminpanel__cloud-row">
+            <button className="ap-btn ap-btn--cloud" onClick={handleSaveToken}>
+              保存并重新连接
+            </button>
+          </div>
+          <p className="adminpanel__cloud-status">
+            {cloud.syncing ? '正在连接…' : migMsg || '令牌已失效，修改暂未同步'}
+          </p>
+        </div>
+      )}
+      {!cloud.expired && cloud.configured && (
         <div className="adminpanel__cloud adminpanel__cloud--ok">
           <h3>云端同步（全设备）</h3>
           <p className="adminpanel__cloud-status">
@@ -559,7 +595,7 @@ export default function AdminPanel() {
           </p>
         </div>
       )}
-      {!cloud.configured && (
+      {!cloud.expired && !cloud.configured && (
         <div className="adminpanel__cloud">
           <h3>云端同步（全设备）· 首次连接</h3>
           <p>

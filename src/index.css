@@ -1680,6 +1680,18 @@ textarea {
   font-weight: 500;
   margin: 0;
 }
+.adminpanel__cloud--expired {
+  border-color: rgba(230, 110, 100, 0.5);
+  background: rgba(74, 30, 26, 0.4);
+}
+.adminpanel__cloud--expired h3 {
+  color: #f0a39a;
+}
+.adminpanel__cloud--expired .adminpanel__cloud-status {
+  color: #f0a39a;
+  font-weight: 500;
+  margin: 0;
+}
 .adminpanel__cloud h3 {
   margin: 0 0 6px;
   font-size: 13px;

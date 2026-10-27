@@ -507,6 +507,7 @@ try {
 let cloudEdits = {}
 let cloudImages = {}
 let cloudLoaded = false
+let tokenExpired = false
 let syncing = false
 let syncError = ''
 let lastSyncAt = 0
@@ -522,7 +523,39 @@ export function setCloudToken(t) {
   } catch {
     /* ignore */
   }
+  tokenExpired = false
   notifyCloud()
+}
+
+// 令牌失效自动检测：GitHub 接口返回 401/403 即标记过期（写入、读取任何环节都会触发）
+function markTokenExpired() {
+  if (!tokenExpired) {
+    tokenExpired = true
+    notifyCloud()
+  }
+}
+
+// 主动校验令牌有效性（后台打开时调用）：GET /user，401/403 = 过期
+export async function checkTokenValidity() {
+  if (!token) {
+    tokenExpired = false
+    notifyCloud()
+    return { ok: false, expired: false }
+  }
+  try {
+    const res = await fetch('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+    })
+    const expired = res.status === 401 || res.status === 403
+    if (tokenExpired !== expired) {
+      tokenExpired = expired
+      notifyCloud()
+    }
+    return { ok: res.ok, expired }
+  } catch {
+    /* 网络异常不算过期，保持原状态 */
+    return { ok: false, expired: tokenExpired }
+  }
 }
 export function subscribeCloud(fn) {
   cloudListeners.add(fn)
@@ -536,6 +569,7 @@ export function getCloudStatus() {
     error: syncError,
     lastSync: lastSyncAt,
     loaded: cloudLoaded,
+    expired: tokenExpired,
     cloudEditCount: Object.keys(cloudEdits).length,
   }
   // 快照必须保持引用稳定（useSyncExternalStore 依赖 Object.is），否则触发无限渲染
@@ -563,6 +597,8 @@ async function ghFetch(path, init) {
       ...(init?.headers || {}),
     },
   })
+  // 令牌过期/无权限：自动标记，后台弹出重新输入窗口
+  if (res.status === 401 || res.status === 403) markTokenExpired()
   return res
 }
 
