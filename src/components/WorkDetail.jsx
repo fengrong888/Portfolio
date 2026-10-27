@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWorks } from '../lib/edits'
 import { observeIn, unobserveIn } from '../lib/motion'
@@ -8,6 +8,7 @@ import Editable from './Editable'
 // 每张图以自下而上的揭幕入场。支持 Esc 返回、←/→ 切换。
 function DetailFigure({ src, alt }) {
   const ref = useRef(null)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     const el = ref.current
@@ -17,7 +18,18 @@ function DetailFigure({ src, alt }) {
 
   return (
     <figure ref={ref} className="detail__figure">
-      <img className="detail__img" src={src} alt={alt} loading="lazy" decoding="async" />
+      {failed ? (
+        <div className="detail__img-fallback">图片加载失败，请稍后刷新重试</div>
+      ) : (
+        <img
+          className="detail__img"
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+        />
+      )}
     </figure>
   )
 }
@@ -51,7 +63,7 @@ export default function WorkDetail() {
     return (
       <main className="detail">
         <div className="detail__empty" style={{ paddingTop: 'var(--nav-h)' }}>
-          该作品详情图片尚未提供——请在管理面板编辑后导出数据发回，或直接提供图片压缩包。
+          正在加载作品详情…
         </div>
       </main>
     )
@@ -63,7 +75,7 @@ export default function WorkDetail() {
     <main className="detail">
       {work._new && shots.length === 0 && (
         <div className="detail__empty" style={{ paddingTop: 'var(--nav-h)' }}>
-          该作品详情图片尚未提供——请在管理面板编辑后导出数据发回，或直接提供图片压缩包。
+          该作品详情图片尚未提供，可在管理面板上传后点「完成（自动同步）」发布。
         </div>
       )}
 
