@@ -28,8 +28,17 @@ export default function WorkCard({ work, index }) {
   useEffect(() => {
     if (!isUploadedCover) return
     // 依赖 work.img：云端数据异步加载完成后，work.img 从占位图变成真实上传封面，
-    // 依赖变化会重新提取主色，确保任何设备/任何加载时机都能匹配出作品色彩
-    extractDominantColor(work.img).then((c) => c && setTint(c))
+    // 依赖变化会重新提取主色，确保任何设备/任何加载时机都能匹配出作品色彩。
+    // 提取优先走 jsDelivr CDN（国内快、带 CORS），失败再回退 GitHub 原站相对路径
+    let cancel = false
+    extractDominantColor(jsdelivrUrl(work.img)).then((c) => {
+      if (cancel) return
+      if (c) setTint(c)
+      else extractDominantColor(work.img).then((c2) => c2 && !cancel && setTint(c2))
+    })
+    return () => {
+      cancel = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [work.img])
 

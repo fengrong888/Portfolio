@@ -53,7 +53,11 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const onCoverHover = () => {
     if (tint) return
     const src = hasCover ? getStoredImage(`work-${id}-img`) : shots[0] || work.img
-    extractDominantColor(src).then((c) => c && setTint(c))
+    // 优先 CDN（国内快）提取，失败回退原站路径
+    extractDominantColor(jsdelivrUrl(src)).then((c) => {
+      if (c) setTint(c)
+      else extractDominantColor(src).then((c2) => c2 && setTint(c2))
+    })
   }
   useEditsRev()
   const hasCover = !!getStoredImage(`work-${id}-img`)
