@@ -39,8 +39,10 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const [upShots, setUpShots] = useState(false)
   // 上传中：'cover' | 'shots' | 'insert' | null
   const [busy, setBusy] = useState(null)
-  const [shotDrag, setShotDrag] = useState(null) // 详情图拖拽：起始 index
-  const [shotOver, setShotOver] = useState(null) // 详情图拖拽：悬停目标 index
+  const [shotDrag, setShotDrag] = useState(null) // 详情图拖拽：起始 index（视觉反馈）
+  const [shotOver, setShotOver] = useState(null) // 详情图拖拽：目标插入位
+  const [liveShots, setLiveShots] = useState(null) // 拖拽中的实时顺序（松手后统一保存）
+  const shotFromRef = useRef(null) // 拖拽起始 index（事件层）
   const coverRef = useRef(null)
   const shotsRef = useRef(null)
   const insertRef = useRef(null) // 记录待插入位置：{ index }
@@ -107,6 +109,45 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     syncNow().catch(() => {})
   }
   const shots = work.shots || []
+  const shownShots = liveShots || shots
+
+  // 详情图拖拽（Pointer 事件：鼠标/触屏通用）——拖拽期间只改内存实时跟手，松手一次性保存
+  const onShotPointerDown = (e, i) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    shotFromRef.current = i
+    setShotDrag(i)
+  }
+  const onShotPointerMove = (e, i) => {
+    const from = shotFromRef.current
+    if (from === null || from === undefined) return
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const after = e.clientX >= rect.left + rect.width / 2
+    const to = after ? i + 1 : i // 插到目标图前（to=i）或后（to=i+1）
+    const cur = from < to ? to - 1 : to // 移除 from 后的实际插入位
+    if (cur === from) return
+    const next = [...shownShots]
+    const [m] = next.splice(from, 1)
+    next.splice(cur, 0, m)
+    setLiveShots(next)
+    shotFromRef.current = cur
+    setShotDrag(cur)
+    setShotOver(to)
+  }
+  const endShotDrag = () => {
+    const from = shotFromRef.current
+    shotFromRef.current = null
+    setShotDrag(null)
+    setShotOver(null)
+    if (from === null || from === undefined) return
+    const next = liveShots
+    if (!next) return
+    // 松手统一保存（写本地存储，点「完成」时随云端同步）
+    putImage(`work-${id}-shots`, JSON.stringify(next))
+    setLiveShots(null)
+  }
 
   const onCover = async (e) => {
     const file = e.target.files?.[0]
@@ -130,7 +171,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     try {
       const urls = await Promise.all(files.map((f) => compressImage(f, 1800, 0.8)))
       // 新增追加：保留已有详情图，新图排在末尾
-      await putImage(`work-${id}-shots`, JSON.stringify([...shots, ...urls]))
+      await putImage(`work-${id}-shots`, JSON.stringify([...shownShots, ...urls]))
       setUpShots(true)
       setTimeout(() => setUpShots(false), 1600)
     } finally {
@@ -146,7 +187,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     setBusy('insert')
     try {
       const urls = await Promise.all(files.map((f) => compressImage(f, 1800, 0.8)))
-      const next = [...shots.slice(0, index), ...urls, ...shots.slice(index)]
+      const next = [...shownShots.slice(0, index), ...urls, ...shownShots.slice(index)]
       await putImage(`work-${id}-shots`, JSON.stringify(next))
     } finally {
       setBusy(null)
@@ -163,7 +204,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   }
 
   const onDeleteShot = (index) => {
-    if (window.confirm(`确定删除详情图第 ${index + 1} 张？`)) deleteShot(id, shots, index)
+    if (window.confirm(`确定删除详情图第 ${index + 1} 张？`)) deleteShot(id, shownShots, index)
   }
 
   const onDelete = () => {
@@ -272,9 +313,9 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
 
           <div className="ap-shots">
             <span className="ap-row__imgs-label">
-              详情图（{shots.length} 张）：拖动缩略图可调换顺序；每张可删除，或在任意一张前 / 后插入新图
+              详情图（{shownShots.length} 张）：直接拖动缩略图即可调整顺序；每张可删除，或在任意一张前 / 后插入新图
             </span>
-            {shots.length === 0 && <p className="ap-row__note">暂无详情图——可在下方批量上传，或插入单张。</p>}
+            {shownShots.length === 0 && <p className="ap-row__note">暂无详情图——可在下方批量上传，或插入单张。</p>}
             <div className="ap-shots__wrap">
               <button
                 className="ap-shots__nav ap-shots__nav--prev"
@@ -283,35 +324,20 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
               >
                 ‹
               </button>
-              <div className="ap-shots__list" ref={shotsListRef}>
-                {shots.map((s, i) => (
+              <div
+                className="ap-shots__list"
+                ref={shotsListRef}
+                onPointerUp={endShotDrag}
+                onPointerCancel={endShotDrag}
+              >
+                {shownShots.map((s, i) => (
                   <div
                     className={`ap-shot${shotOver === i ? ' ap-shot--over' : ''}${
                       shotDrag === i ? ' ap-shot--drag' : ''
                     }`}
-                    key={`${s.slice(0, 24)}-${i}`}
-                    draggable
-                    onDragStart={(e) => {
-                      e.stopPropagation()
-                      e.dataTransfer.effectAllowed = 'move'
-                      setShotDrag(i)
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setShotOver(i)
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      if (shotDrag !== null && shotDrag !== i) moveShot(id, shots, shotDrag, i)
-                      setShotDrag(null)
-                      setShotOver(null)
-                    }}
-                    onDragEnd={() => {
-                      setShotDrag(null)
-                      setShotOver(null)
-                    }}
+                    key={s.slice(0, 24)}
+                    onPointerDown={(e) => onShotPointerDown(e, i)}
+                    onPointerMove={(e) => onShotPointerMove(e, i)}
                   >
                     <img src={s} alt={`详情图 ${i + 1}`} draggable={false} />
                     <button className="ap-shot__del" title="删除此图" onClick={() => onDeleteShot(i)}>

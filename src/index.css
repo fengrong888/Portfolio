@@ -1621,9 +1621,17 @@ textarea {
   position: relative;
   flex: 0 0 auto;
   cursor: grab;
+  touch-action: none; /* 触屏上拖动缩略图时不触发页面滚动，保证拖拽可用 */
+  user-select: none;
+  -webkit-user-select: none;
 }
 .ap-shot:active { cursor: grabbing; }
-.ap-shot--drag { opacity: 0.35; }
+.ap-shot--drag {
+  opacity: 0.4;
+  transform: scale(0.92);
+  z-index: 2;
+}
+.ap-shot--drag img { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); }
 .ap-shot--over { opacity: 1; }
 .ap-shot--over img { outline: 2px dashed var(--accent-bright); outline-offset: 2px; }
 .ap-shot img {
