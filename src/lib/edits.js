@@ -693,6 +693,16 @@ function queueSync(delay = 600) {
 
 // 把当前生效数据写入云端 JSON（合并本地 + 既有云端）
 export async function syncNow() {
+  const first = await doSyncNow()
+  // 网络瞬断/限流/冲突等偶发失败：短暂等待后自动重试一次，降低丢数据风险
+  if (!first.ok && first.error && first.error !== 'no-token' && first.error !== 'busy') {
+    await new Promise((r) => setTimeout(r, 800))
+    return doSyncNow()
+  }
+  return first
+}
+
+async function doSyncNow() {
   if (!token) return { ok: false, error: 'no-token' }
   if (syncing) return { ok: false, error: 'busy' }
   syncing = true
