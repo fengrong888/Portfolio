@@ -18,8 +18,10 @@ export default function WorkCard({ work, index }) {
   const introRef = useRef(null)
   const [inView, setInView] = useState(false)
   const editing = useEditing()
-  // 后台上传过封面的作品：悬停纯色自动提取封面主色（替代预置 hover 色）
-  const isUploadedCover = typeof work.img === 'string' && work.img.indexOf('./data/imgs/') === 0
+  // 后台上传过封面的作品（云端路径或本机未同步的 dataURL）：悬停纯色自动提取封面主色（替代预置 hover 色）
+  const isUploadedCover =
+    typeof work.img === 'string' &&
+    (work.img.indexOf('./data/imgs/') === 0 || work.img.indexOf('data:image/') === 0)
   const [tint, setTint] = useState(null)
   useEffect(() => {
     if (!isUploadedCover) return

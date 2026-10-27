@@ -151,6 +151,9 @@ function resolveOrder(S) {
 function computeWorks(live = false) {
   const S = live ? edits : activeEdits()
   const IMG = live ? imageStore : activeImages()
+  // 云端图片映射也作为封面/详情图的兜底来源：
+  // 非上传设备本机 imageStore 为空，但云端已同步的封面/详情图仍应正常显示
+  const imgFor = (k) => (live ? imageStore[k] || cloudImages[k] : activeImages()[k] || cloudImages[k])
   const ids = new Set(baseWorks.map((w) => w.id))
   Object.keys(S).forEach((k) => {
     const m = k.match(/^work-(\d+)-(title|cat|en)$/)
@@ -172,7 +175,7 @@ function computeWorks(live = false) {
       if (S[`work-${id}-deleted`] === '1') return null
       const base = baseWorks.find((w) => w.id === id)
       if (base) {
-        const upShots = IMG[`work-${id}-shots`]
+        const upShots = imgFor(`work-${id}-shots`)
         return {
           ...base,
           title: S[`work-${id}-title`] ?? base.title,
@@ -181,12 +184,12 @@ function computeWorks(live = false) {
           year: S[`work-${id}-year`] ?? base.year,
           dcat: S[`work-${id}-dcat`] ?? S[`work-${id}-cat`] ?? base.cat,
           dtitle: S[`work-${id}-dtitle`] ?? S[`work-${id}-title`] ?? base.title,
-          img: normalizeImgPath(IMG[`work-${id}-img`] || base.img),
+          img: normalizeImgPath(imgFor(`work-${id}-img`) || base.img),
           shots: upShots ? normalizeImgList(JSON.parse(upShots)) : normalizeImgList(base.shots),
         }
       }
       // 新增作品（尚未提供图片，使用占位封面）
-      const nShots = IMG[`work-${id}-shots`]
+      const nShots = imgFor(`work-${id}-shots`)
       return {
         id,
         title: S[`work-${id}-title`] || `新作品 ${id}`,
@@ -196,7 +199,7 @@ function computeWorks(live = false) {
         dcat: S[`work-${id}-dcat`] ?? S[`work-${id}-cat`] ?? '设计项目',
         dtitle: S[`work-${id}-dtitle`] ?? S[`work-${id}-title`] ?? `新作品 ${id}`,
         ratio: '3 / 4',
-        img: normalizeImgPath(imageStore[`work-${id}-img`] || NEW_WORK_PLACEHOLDER),
+        img: normalizeImgPath(imgFor(`work-${id}-img`) || NEW_WORK_PLACEHOLDER),
         hover: '#C6CE3B',
         shots: nShots ? normalizeImgList(JSON.parse(nShots)) : [],
         tags: [],
