@@ -27,9 +27,11 @@ export default function WorkCard({ work, index }) {
   const [cdnFail, setCdnFail] = useState(false)
   useEffect(() => {
     if (!isUploadedCover) return
+    // 依赖 work.img：云端数据异步加载完成后，work.img 从占位图变成真实上传封面，
+    // 依赖变化会重新提取主色，确保任何设备/任何加载时机都能匹配出作品色彩
     extractDominantColor(work.img).then((c) => c && setTint(c))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [work.img])
 
   const rotateX = useSpring(useMotionValue(0), springValues)
   const rotateY = useSpring(useMotionValue(0), springValues)
