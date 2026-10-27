@@ -45,25 +45,25 @@ export default function App() {
   // - 刷新 / 从历史返回 / 再次加载 → 停留在当前页（如 #/work/3、#/about），不再回首屏
   const [intro, setIntro] = useState(() => {
     try {
-      // 同一浏览器内只要看过一次首屏就写标记（localStorage 跨标签页/刷新长期保留）
-      if (localStorage.getItem('portfolio-intro-shown')) {
-        // 刷新前正停留在首屏（sessionStorage 刷新保留）→ 刷新后仍回首屏，不自动跳走
-        if (sessionStorage.getItem('portfolio-intro-active') === '1') return true
-        return false
-      }
-    } catch { /* 存储不可用时回退到首次显示 */ }
+      // 打开网站默认进入首屏（点击后进入作品页）
+      // 刷新时保持原页面：刷新前在首屏 → 回首屏；在作品页/详情页刷新 → 停在原页
+      if (sessionStorage.getItem('portfolio-intro-active') === '1') return true
+      if (sessionStorage.getItem('portfolio-seen') === '1') return false
+    } catch { /* 存储不可用时回退到首屏 */ }
     return true
   })
   useEffect(() => {
     if (intro) {
       try {
-        localStorage.setItem('portfolio-intro-shown', '1')
-        // 记录「当前正停留在首屏」：刷新时保留，关闭标签页/进入后自动清除
+        // 记录「当前正停留在首屏」：刷新时保留，点击进入后清除
         sessionStorage.setItem('portfolio-intro-active', '1')
+        sessionStorage.removeItem('portfolio-seen')
       } catch { /* ignore */ }
     } else {
       try {
         sessionStorage.removeItem('portfolio-intro-active')
+        // 记录「已进入过网站正文」：非首屏刷新时停留在原页面
+        sessionStorage.setItem('portfolio-seen', '1')
       } catch { /* ignore */ }
     }
   }, [intro])
