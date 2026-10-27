@@ -1003,8 +1003,63 @@ async function removeCloudLinked(key, value) {
   }
 }
 
-// 从图片提取主色调（过滤近黑/近白/透明，取平均色并提亮 30% 用于纯色底）
-export function extractDominantColor(src) {
+// 确定性色相微调表：按作品编号取档，让相邻作品的悬停纯色色相拉开（尽量不重复）。
+// 16 档、相邻档色相差 ≥28°（±60° 内）：暖色系作品也能分散到红/橙/黄/玫红等不同区间，
+// 避免一排卡片悬停时全是相近的米黄/粉棕。
+const HUE_BANDS = [
+  0, 28, -32, 44, -16, 36, -44, 20, -24, 48, -8, 32, -48, 16, -36, 40
+]
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b)
+  let h = 0, s = 0
+  const l = (mx + mn) / 2
+  if (mx !== mn) {
+    const d = mx - mn
+    s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn)
+    switch (mx) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break
+      case g: h = (b - r) / d + 2; break
+      default: h = (r - g) / d + 4
+    }
+    h *= 60
+  }
+  return [h, s, l]
+}
+function hslToRgb(h, s, l) {
+  h = ((h % 360) + 360) % 360
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const m = l - c / 2
+  let r = 0, g = 0, b = 0
+  if (h < 60) [r, g, b] = [c, x, 0]
+  else if (h < 120) [r, g, b] = [x, c, 0]
+  else if (h < 180) [r, g, b] = [0, c, x]
+  else if (h < 240) [r, g, b] = [0, x, c]
+  else if (h < 300) [r, g, b] = [x, 0, c]
+  else [r, g, b] = [c, 0, x]
+  return [
+    Math.round((r + m) * 255),
+    Math.round((g + m) * 255),
+    Math.round((b + m) * 255)
+  ]
+}
+// 把提取出的主色加工成「鲜艳、可读、有区分度」的悬停纯色：
+// 1) 饱和度下限提到 0.66（解决之前发白发灰、饱和度低的问题）
+// 2) 亮度收敛到 0.70~0.76（保证白字可读，又不过度发白）
+// 3) 按作品编号做色相微调，相邻作品尽量不同色
+function vibrantFromRGB(r, g, b, id) {
+  const [h0, s0, l0] = rgbToHsl(r, g, b)
+  const band = HUE_BANDS[Math.abs(Number(id) || 0) % HUE_BANDS.length]
+  const h = (h0 + band + 360) % 360
+  const s = Math.max(s0, 0.66)
+  const l = Math.min(Math.max(l0, 0.7), 0.76)
+  const [rr, gg, bb] = hslToRgb(h, s, l)
+  return `rgb(${rr},${gg},${bb})`
+}
+
+// 从图片提取主色调（过滤近黑/近白/透明，取平均色后加工成鲜艳可读的悬停纯色）
+export function extractDominantColor(src, id) {
   return new Promise((resolve) => {
     if (!src || typeof src !== 'string') { resolve(null); return }
     const img = new Image()
@@ -1026,11 +1081,7 @@ export function extractDominantColor(src) {
           r += R; g += G; b += B; n++
         }
         if (!n) { resolve(null); return }
-        const blend = 0.72
-        const rr = Math.round(((r / n) * blend) + 255 * (1 - blend))
-        const gg = Math.round(((g / n) * blend) + 255 * (1 - blend))
-        const bb = Math.round(((b / n) * blend) + 255 * (1 - blend))
-        resolve(`rgb(${rr},${gg},${bb})`)
+        resolve(vibrantFromRGB(Math.round(r / n), Math.round(g / n), Math.round(b / n), id))
       } catch {
         resolve(null)
       }

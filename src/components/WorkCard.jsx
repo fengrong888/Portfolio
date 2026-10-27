@@ -31,10 +31,10 @@ export default function WorkCard({ work, index }) {
     // 依赖变化会重新提取主色，确保任何设备/任何加载时机都能匹配出作品色彩。
     // 提取优先走 jsDelivr CDN（国内快、带 CORS），失败再回退 GitHub 原站相对路径
     let cancel = false
-    extractDominantColor(jsdelivrUrl(work.img)).then((c) => {
+    extractDominantColor(jsdelivrUrl(work.img), work.id).then((c) => {
       if (cancel) return
       if (c) setTint(c)
-      else extractDominantColor(work.img).then((c2) => c2 && !cancel && setTint(c2))
+      else extractDominantColor(work.img, work.id).then((c2) => c2 && !cancel && setTint(c2))
     })
     return () => {
       cancel = true
