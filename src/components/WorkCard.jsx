@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'motion/react'
 import gsap from 'gsap'
-import { useEditing, extractDominantColor } from '../lib/edits'
+import { useEditing, extractDominantColor, jsdelivrUrl } from '../lib/edits'
 import Editable from './Editable'
 
 // 悬停动效（GSAP）：纯色层淡入淡出；简介三行依次上移淡入；另叠加 3D 倾斜
@@ -23,6 +23,8 @@ export default function WorkCard({ work, index }) {
     typeof work.img === 'string' &&
     (work.img.indexOf('./data/imgs/') === 0 || work.img.indexOf('data:image/') === 0)
   const [tint, setTint] = useState(null)
+  // 封面图 CDN 加载失败时回退 GitHub Pages 原站
+  const [cdnFail, setCdnFail] = useState(false)
   useEffect(() => {
     if (!isUploadedCover) return
     extractDominantColor(work.img).then((c) => c && setTint(c))
@@ -145,7 +147,15 @@ export default function WorkCard({ work, index }) {
         style={{ aspectRatio: work.ratio, rotateX, rotateY, scale }}
       >
         <div className="card__img-p">
-          <img className="card__img" ref={imgRef} src={work.img} alt={work.title} loading="lazy" decoding="async" />
+          <img
+            className="card__img"
+            ref={imgRef}
+            src={cdnFail ? work.img : jsdelivrUrl(work.img)}
+            alt={work.title}
+            loading="lazy"
+            decoding="async"
+            onError={() => setCdnFail(true)}
+          />
         </div>
         <div
           className="card__fill"

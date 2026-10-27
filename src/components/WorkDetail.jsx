@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useWorks } from '../lib/edits'
+import { useWorks, jsdelivrUrl } from '../lib/edits'
 import { observeIn, unobserveIn } from '../lib/motion'
 import Editable from './Editable'
 
 // 作品详情：整屏铺满的图片画廊，向下滚动浏览。
 // 每张图以自下而上的揭幕入场。支持 Esc 返回、←/→ 切换。
+// 图片加载链路：jsDelivr 国内 CDN 优先 → 失败自动回退 GitHub Pages 原站 → 仍失败显示提示框
 function DetailFigure({ src, alt }) {
   const ref = useRef(null)
-  const [failed, setFailed] = useState(false)
+  const [stage, setStage] = useState(0) // 0=CDN, 1=原站回退, 2=加载失败
 
   useEffect(() => {
     const el = ref.current
@@ -16,18 +17,20 @@ function DetailFigure({ src, alt }) {
     return () => unobserveIn(el)
   }, [])
 
+  const cdnSrc = stage === 0 ? jsdelivrUrl(src) : src
+
   return (
     <figure ref={ref} className="detail__figure">
-      {failed ? (
+      {stage >= 2 ? (
         <div className="detail__img-fallback">图片加载失败，请稍后刷新重试</div>
       ) : (
         <img
           className="detail__img"
-          src={src}
+          src={cdnSrc}
           alt={alt}
           loading="lazy"
           decoding="async"
-          onError={() => setFailed(true)}
+          onError={() => setStage((s) => Math.min(s + 1, 2))}
         />
       )}
     </figure>

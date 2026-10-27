@@ -14,6 +14,7 @@ import {
   putImage,
   removeImage,
   getStoredImage,
+  jsdelivrUrl,
   useEditsRev,
   setWorkOrder,
   deleteShot,
@@ -46,6 +47,9 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const shotsListRef = useRef(null) // 详情图横排列表（左右按钮滚动）
   // 悬停纯色：从作品封面/详情图自动提取主色（缓存，每行只提取一次）
   const [tint, setTint] = useState(null)
+  // 封面预览 CDN 加载失败时回退 GitHub Pages 原站
+  const [coverCdnFail, setCoverCdnFail] = useState(false)
+  const coverSrc = hasCover ? getStoredImage(`work-${id}-img`) : work.img
   const onCoverHover = () => {
     if (tint) return
     const src = hasCover ? getStoredImage(`work-${id}-img`) : shots[0] || work.img
@@ -233,9 +237,10 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
             >
               <img
                 className="ap-cover-prev"
-                src={hasCover ? getStoredImage(`work-${id}-img`) : work.img}
+                src={coverCdnFail ? coverSrc : jsdelivrUrl(coverSrc)}
                 alt="封面预览"
                 draggable={false}
+                onError={() => setCoverCdnFail(true)}
               />
               <div className="ap-cover-tint" style={{ background: tint || 'rgba(0,0,0,0)' }} />
               {busy === 'cover' && (

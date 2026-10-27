@@ -616,6 +616,15 @@ async function fetchTimeout(url, options = {}, ms = 7000) {
   }
 }
 
+// jsDelivr 国内 CDN 加速：把站内相对图片路径转为 CDN URL（GitHub Pages 原站作为自动回退）
+export function jsdelivrUrl(rel) {
+  if (typeof rel !== 'string' || !rel) return rel
+  if (rel.startsWith('data:') || rel.startsWith('http')) return rel
+  let p = rel.replace(/^\.\//, '')
+  if (p.startsWith('data/imgs/') || p.startsWith('works/')) p = 'docs/' + p
+  return `https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/${p}`
+}
+
 // 读取云端数据：优先 GitHub API（实时返回，绕过 Pages CDN 缓存，修改后立即生效）；
 // API 不可达时回退 raw CDN，再回退站内数据文件（GitHub Pages 托管仓库文件，天然最新）。
 export async function loadCloud() {
