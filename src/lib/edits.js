@@ -149,17 +149,22 @@ function resolveOrder(S) {
       v = Number(localStorage.getItem('portfolio-order-version') || 0)
     } catch { /* ignore */ }
     if (v < ORDER_VERSION) {
-      // 新版本首次生效：把本地拖拽顺序一并替换为按年份的固定顺序（仅一次），
-      // 避免版本标记已写但内存中仍保留旧 order 导致重算回退
+      // 新版本首次生效：优先采用云端已同步的排序（含最新上传作品），
+      // 云端无排序时用按年份的固定顺序兜底；同时写入版本标记避免反复重算
+      let order = null
+      try {
+        order = JSON.parse(S['work-order'] || 'null')
+      } catch { /* ignore */ }
+      const use = Array.isArray(order) && order.length ? order : FIXED_ORDER
       try {
         localStorage.setItem('portfolio-order-version', String(ORDER_VERSION))
         const raw = localStorage.getItem(KEY) || '{}'
         const cur = JSON.parse(raw)
-        cur['work-order'] = JSON.stringify(FIXED_ORDER)
+        cur['work-order'] = JSON.stringify(use)
         localStorage.setItem(KEY, JSON.stringify(cur))
-        edits = { ...edits, 'work-order': JSON.stringify(FIXED_ORDER) }
+        edits = { ...edits, 'work-order': JSON.stringify(use) }
       } catch { /* ignore */ }
-      return FIXED_ORDER
+      return use
     }
     return JSON.parse(S['work-order'] || 'null')
   } catch {
@@ -703,9 +708,14 @@ export async function loadCloud() {
 }
 
 // 合并规则：本地 edits 覆盖云端 edits（本地含最新未同步操作）
+// 例外：排序（work-order）以云端为准——云端=最近一次同步的权威顺序，
+// 避免旧设备本地残留的旧排序覆盖其他设备上传的最新排序
 // 合并结果同时写回本机 localStorage：下次离线/断网打开也保留最近一次云端数据
 function mergeAndNotify() {
   edits = { ...cloudEdits, ...localEditsRaw() }
+  if (cloudEdits && typeof cloudEdits['work-order'] === 'string') {
+    edits['work-order'] = cloudEdits['work-order']
+  }
   persistLocal(edits)
   invalidateWorks()
   listeners.forEach((l) => l())
