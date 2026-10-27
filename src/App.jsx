@@ -45,9 +45,12 @@ export default function App() {
   // - 刷新 / 从历史返回 / 再次加载 → 停留在当前页（如 #/work/3、#/about），不再回首屏
   const [intro, setIntro] = useState(() => {
     try {
-      // 同一浏览器内只要看过一次首屏就写标记（localStorage 跨标签页/刷新长期保留）；
-      // 刷新、重新打开标签页均停留在原页面，不再回首屏
-      if (localStorage.getItem('portfolio-intro-shown')) return false
+      // 同一浏览器内只要看过一次首屏就写标记（localStorage 跨标签页/刷新长期保留）
+      if (localStorage.getItem('portfolio-intro-shown')) {
+        // 刷新前正停留在首屏（sessionStorage 刷新保留）→ 刷新后仍回首屏，不自动跳走
+        if (sessionStorage.getItem('portfolio-intro-active') === '1') return true
+        return false
+      }
     } catch { /* 存储不可用时回退到首次显示 */ }
     return true
   })
@@ -55,6 +58,12 @@ export default function App() {
     if (intro) {
       try {
         localStorage.setItem('portfolio-intro-shown', '1')
+        // 记录「当前正停留在首屏」：刷新时保留，关闭标签页/进入后自动清除
+        sessionStorage.setItem('portfolio-intro-active', '1')
+      } catch { /* ignore */ }
+    } else {
+      try {
+        sessionStorage.removeItem('portfolio-intro-active')
       } catch { /* ignore */ }
     }
   }, [intro])
