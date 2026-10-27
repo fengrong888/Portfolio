@@ -49,6 +49,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const [tint, setTint] = useState(null)
   // 封面预览 CDN 加载失败时回退 GitHub Pages 原站
   const [coverCdnFail, setCoverCdnFail] = useState(false)
+  const hasCover = !!getStoredImage(`work-${id}-img`)
   const coverSrc = hasCover ? getStoredImage(`work-${id}-img`) : work.img
   const onCoverHover = () => {
     if (tint) return
@@ -60,7 +61,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     })
   }
   useEditsRev()
-  const hasCover = !!getStoredImage(`work-${id}-img`)
   const hasShots = !!getStoredImage(`work-${id}-shots`)
   // 文字草稿：后台输入先改草稿，点「完成」才提交到网站
   const [d, setD] = useState(() => ({
