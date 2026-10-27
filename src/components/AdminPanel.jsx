@@ -551,6 +551,14 @@ export default function AdminPanel() {
         ))}
       </div>
 
+      {cloud.configured && (
+        <div className="adminpanel__cloud adminpanel__cloud--ok">
+          <h3>云端同步（全设备）</h3>
+          <p className="adminpanel__cloud-status">
+            {cloud.syncing ? '正在连接…' : '✓ 已连接云端 · 所有修改将自动同步到全网'}
+          </p>
+        </div>
+      )}
       {!cloud.configured && (
         <div className="adminpanel__cloud">
           <h3>云端同步（全设备）· 首次连接</h3>

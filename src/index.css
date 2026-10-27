@@ -1671,6 +1671,15 @@ textarea {
   border-radius: 10px;
   background: rgba(28, 25, 22, 0.5);
 }
+.adminpanel__cloud--ok {
+  border-color: rgba(120, 200, 150, 0.35);
+  background: rgba(34, 62, 44, 0.35);
+}
+.adminpanel__cloud--ok .adminpanel__cloud-status {
+  color: #7fd0a1;
+  font-weight: 500;
+  margin: 0;
+}
 .adminpanel__cloud h3 {
   margin: 0 0 6px;
   font-size: 13px;
