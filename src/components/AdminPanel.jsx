@@ -540,11 +540,6 @@ export default function AdminPanel() {
       </button>
       <div className="adminpanel__head">
         <h2>作品管理</h2>
-        <p>
-          拖动行可调整作品顺序；展开作品可编辑文字、管理封面与详情图（删除/前后插入/批量上传）、
-          新增或删除作品。图片上传、排序、删除会自动保存并同步云端；文字修改需点「保存作品」或
-          底部「完成（自动同步）」才会保存并同步到全网。
-        </p>
       </div>
 
       <div className="adminpanel__list">

@@ -45,15 +45,16 @@ export default function App() {
   // - 刷新 / 从历史返回 / 再次加载 → 停留在当前页（如 #/work/3、#/about），不再回首屏
   const [intro, setIntro] = useState(() => {
     try {
-      // 同一标签页内只要看过一次首屏就写标记；刷新会保留 sessionStorage，故刷新不再回首页
-      if (sessionStorage.getItem('portfolio-intro-shown')) return false
+      // 同一浏览器内只要看过一次首屏就写标记（localStorage 跨标签页/刷新长期保留）；
+      // 刷新、重新打开标签页均停留在原页面，不再回首屏
+      if (localStorage.getItem('portfolio-intro-shown')) return false
     } catch { /* 存储不可用时回退到首次显示 */ }
     return true
   })
   useEffect(() => {
     if (intro) {
       try {
-        sessionStorage.setItem('portfolio-intro-shown', '1')
+        localStorage.setItem('portfolio-intro-shown', '1')
       } catch { /* ignore */ }
     }
   }, [intro])
