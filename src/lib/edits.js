@@ -124,6 +124,24 @@ function normalizeImgList(arr) {
   if (!Array.isArray(arr)) return arr
   return arr.map(normalizeImgPath)
 }
+// 详情图数据防御性解析：兼容 JSON 数组字符串 / 真正的数组 / 单张路径字符串
+// （历史数据或异常上传可能把单张路径直接存进 shots 键，JSON.parse 会崩 → 整页黑屏）
+function parseShots(v) {
+  if (Array.isArray(v)) return normalizeImgList(v)
+  if (typeof v === 'string') {
+    const t = v.trim()
+    if (t.startsWith('[')) {
+      try {
+        const arr = JSON.parse(t)
+        return Array.isArray(arr) ? normalizeImgList(arr) : normalizeImgList([v])
+      } catch {
+        /* 不是合法 JSON，按单张路径处理 */
+      }
+    }
+    if (t) return normalizeImgList([t])
+  }
+  return []
+}
 function resolveOrder(S) {
   try {
     let v = 0
@@ -185,7 +203,7 @@ function computeWorks(live = false) {
           dcat: S[`work-${id}-dcat`] ?? S[`work-${id}-cat`] ?? base.cat,
           dtitle: S[`work-${id}-dtitle`] ?? S[`work-${id}-title`] ?? base.title,
           img: normalizeImgPath(imgFor(`work-${id}-img`) || base.img),
-          shots: upShots ? normalizeImgList(JSON.parse(upShots)) : normalizeImgList(base.shots),
+          shots: upShots ? parseShots(upShots) : normalizeImgList(base.shots),
         }
       }
       // 新增作品（尚未提供图片，使用占位封面）
@@ -201,7 +219,7 @@ function computeWorks(live = false) {
         ratio: '3 / 4',
         img: normalizeImgPath(imgFor(`work-${id}-img`) || NEW_WORK_PLACEHOLDER),
         hover: '#C6CE3B',
-        shots: nShots ? normalizeImgList(JSON.parse(nShots)) : [],
+        shots: nShots ? parseShots(nShots) : [],
         tags: [],
         desc: '',
         _new: true,
