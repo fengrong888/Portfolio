@@ -421,8 +421,15 @@ export default function AdminPanel() {
       try {
         await migrateCloudImages()
         await syncNow()
-      } catch {
-        /* 同步失败不阻断退出后台 */
+      } catch (e) {
+        setSyncing(false)
+        // 同步失败：明确提示，不静默关闭，方便定位问题
+        window.alert(
+          '⚠ 同步失败：' +
+            (e && e.message ? e.message : '网络或令牌问题') +
+            '\n\n请确认：\n1. 云端令牌仍有效（可重新粘贴令牌）\n2. 网络可访问 GitHub\n然后重新点「完成（自动同步）」'
+        )
+        return
       }
       setSyncing(false)
       // 同步完成动效：短暂显示「✓ 已同步」后再关闭
