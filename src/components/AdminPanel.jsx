@@ -120,7 +120,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     if (!files.length) return
     setBusy('shots')
     try {
-      const urls = await Promise.all(files.map((f) => compressImage(f, 3000, 1.0)))
+      const urls = await Promise.all(files.map((f) => compressImage(f, 1800, 0.8)))
       // 新增追加：保留已有详情图，新图排在末尾
       await putImage(`work-${id}-shots`, JSON.stringify([...shots, ...urls]))
       setUpShots(true)
@@ -137,7 +137,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     if (!files.length) return
     setBusy('insert')
     try {
-      const urls = await Promise.all(files.map((f) => compressImage(f, 3000, 1.0)))
+      const urls = await Promise.all(files.map((f) => compressImage(f, 1800, 0.8)))
       const next = [...shots.slice(0, index), ...urls, ...shots.slice(index)]
       await putImage(`work-${id}-shots`, JSON.stringify(next))
     } finally {
