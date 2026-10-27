@@ -685,8 +685,10 @@ export async function loadCloud() {
 }
 
 // 合并规则：本地 edits 覆盖云端 edits（本地含最新未同步操作）
+// 合并结果同时写回本机 localStorage：下次离线/断网打开也保留最近一次云端数据
 function mergeAndNotify() {
   edits = { ...cloudEdits, ...localEditsRaw() }
+  persistLocal(edits)
   invalidateWorks()
   listeners.forEach((l) => l())
 }

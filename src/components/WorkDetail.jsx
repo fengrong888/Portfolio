@@ -14,7 +14,13 @@ function DetailFigure({ src, alt }) {
   useEffect(() => {
     const el = ref.current
     observeIn(el)
-    return () => unobserveIn(el)
+    // 揭幕动画兜底：无论观察器是否触发（旧设备/图片未加载完成等场景），
+    // 1.2s 后强制揭开，绝不出现图片被 clip-path 永久裁剪的黑屏
+    const timer = setTimeout(() => el.classList.add('in'), 1200)
+    return () => {
+      unobserveIn(el)
+      clearTimeout(timer)
+    }
   }, [])
 
   const cdnSrc = stage === 0 ? jsdelivrUrl(src) : src

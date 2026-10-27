@@ -5,6 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  build: {
+    // 降级构建目标：兼容微信内置浏览器 / 旧版安卓 WebView / 旧 Safari，
+    // 避免现代语法（可选链等）在旧内核上直接解析失败导致整页黑屏
+    target: 'es2018',
+  },
   server: {
     port: 5173,
     open: false,

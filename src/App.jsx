@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Component } from 'react'
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Nav from './components/Nav'
 import Home from './components/Home'
@@ -12,6 +12,42 @@ import AdminPanel from './components/AdminPanel'
 import HeroIntro from './components/HeroIntro'
 import { loadStoredImages, loadCloud } from './lib/edits'
 import CursorDot from './components/CursorDot'
+
+// 全局错误边界：任何页面组件异常时不至于整页黑屏，给出可读提示
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch() {
+    /* 记录到控制台即可 */
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <main
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#101010',
+            color: '#e9e2d8',
+            fontFamily: 'serif',
+            fontSize: 18,
+            letterSpacing: '0.08em',
+          }}
+        >
+          页面加载遇到一点问题，请刷新重试
+        </main>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function Shell() {
   const location = useLocation()
@@ -151,11 +187,13 @@ export default function App() {
   }, [])
 
   return (
-    <HashRouter>
-      <ClickSpark sparkColor="#fff" sparkSize={10} sparkRadius={15} sparkCount={8} duration={420}>
-        <Shell />
-        {intro && <HeroIntro key={introKey} onDone={() => setIntro(false)} />}
-      </ClickSpark>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <ClickSpark sparkColor="#fff" sparkSize={10} sparkRadius={15} sparkCount={8} duration={420}>
+          <Shell />
+          {intro && <HeroIntro key={introKey} onDone={() => setIntro(false)} />}
+        </ClickSpark>
+      </HashRouter>
+    </ErrorBoundary>
   )
 }
