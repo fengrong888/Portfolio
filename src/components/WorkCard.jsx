@@ -26,33 +26,39 @@ export default function WorkCard({ work, index }) {
   // 封面图 CDN 加载失败时回退 GitHub Pages 原站
   const [cdnFail, setCdnFail] = useState(false)
   const [retry, setRetry] = useState(0) // 原站也失败后的整链路重试次数
-  // CDN 请求「挂起不返回」时（不报错也不出图）自动超时回退原站。
-  // 1.5s 轮询：仅统计视口内且请求确实未完成（!complete && !naturalWidth）的图，
-  // 连续 2 次命中（约 3s）即回退——不再像旧的单次 5s 检测那样让人久等黑块，
-  // 也不误伤视口外懒加载（视口外未请求的图 complete=false 属正常）
+  // CDN 请求「挂起不返回」时自动回退原站。
+  // 用 IntersectionObserver + 单次超时替代每张卡片永久轮询，减少常驻定时器。
+  // 只在图片进入视口附近后启动检测，避免误伤视口外的懒加载图片。
   useEffect(() => {
     if (cdnFail) return
-    let hang = 0
-    const iv = setInterval(() => {
-      const el = imgRef.current
-      if (!el) return
-      const r = el.getBoundingClientRect()
-      const inView = r.top < window.innerHeight && r.bottom > 0
-      if (!inView) {
-        hang = 0
-        return
-      }
-      if (!el.complete && !el.naturalWidth) {
-        hang += 1
-        if (hang >= 2) {
-          markCdnHang() // 挂起计数：连续 2 次触发熔断，本网络 30 分钟内不再走 CDN
-          setCdnFail(true)
-        }
-      } else {
-        hang = 0
-      }
-    }, 1500)
-    return () => clearInterval(iv)
+    const el = imgRef.current
+    if (!el) return
+
+    let timeoutId = null
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
+        observer.disconnect()
+        // 图片可能在 observer 回调前就已加载完成。
+        if (el.complete || el.naturalWidth) return
+
+        timeoutId = window.setTimeout(() => {
+          const rect = el.getBoundingClientRect()
+          const inView = rect.top < window.innerHeight && rect.bottom > 0
+          if (inView && !el.complete && !el.naturalWidth) {
+            markCdnHang()
+            setCdnFail(true)
+          }
+        }, 3200)
+      },
+      { rootMargin: '100px' }
+    )
+    observer.observe(el)
+
+    return () => {
+      observer.disconnect()
+      if (timeoutId !== null) window.clearTimeout(timeoutId)
+    }
   }, [cdnFail, work.img])
   // 原站也加载失败：不显示失败，按指数退避（2s→4s→8s→封顶16s）自动重试；
   // CDN 未熔断时回到 CDN 重新加载，已熔断则留在原站带时间戳重试——
