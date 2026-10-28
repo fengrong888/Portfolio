@@ -6,10 +6,12 @@ import Editable from './Editable'
 
 // 作品详情：整屏铺满的图片画廊，向下滚动浏览。
 // 每张图以自下而上的揭幕入场。支持 Esc 返回、←/→ 切换。
-// 图片加载链路：jsDelivr 国内 CDN 优先 → 失败自动回退 GitHub Pages 原站 → 仍失败显示提示框
+// 图片加载链路：jsDelivr 国内 CDN 优先 → 失败自动回退 GitHub Pages 原站 →
+// 仍失败自动等待后重新加载（指数退避，永不出现"加载失败"提示，图恢复后自动显示）
 function DetailFigure({ src, alt }) {
   const ref = useRef(null)
-  const [stage, setStage] = useState(0) // 0=CDN, 1=原站回退, 2=加载失败
+  const [stage, setStage] = useState(0) // 0=CDN, 1=原站回退, 2=等待重试
+  const [attempt, setAttempt] = useState(0) // 整链路重试次数（用于退避间隔）
 
   useEffect(() => {
     const el = ref.current
@@ -24,7 +26,7 @@ function DetailFigure({ src, alt }) {
   }, [])
 
   // 图片「挂起不返回」超时兜底：CDN 请求不报错也不返回时，视口内的图
-  // 6s 后强制推进到下一来源（CDN → 原站 → 失败提示），避免黑块/白屏久等
+  // 6s 后强制推进到下一来源（CDN → 原站），避免黑块/白屏久等
   useEffect(() => {
     if (stage >= 2) return
     const t = setTimeout(() => {
@@ -38,12 +40,23 @@ function DetailFigure({ src, alt }) {
     return () => clearTimeout(t)
   }, [stage, src])
 
+  // 整链路都失败：不显示失败提示，按指数退避等待后自动从 CDN 重新加载
+  // （2s → 4s → 8s → 16s → 封顶 16s，持续重试直到图成功显示）
+  useEffect(() => {
+    if (stage < 2) return
+    const t = setTimeout(() => {
+      setStage(0)
+      setAttempt((a) => a + 1)
+    }, Math.min(2000 * Math.pow(2, Math.min(attempt, 3)), 16000))
+    return () => clearTimeout(t)
+  }, [stage, attempt])
+
   const cdnSrc = stage === 0 ? jsdelivrUrl(src) : src
 
   return (
     <figure ref={ref} className="detail__figure">
       {stage >= 2 ? (
-        <div className="detail__img-fallback">图片加载失败，请稍后刷新重试</div>
+        <div className="detail__img-fallback">图片加载中…</div>
       ) : (
         <img
           className="detail__img"

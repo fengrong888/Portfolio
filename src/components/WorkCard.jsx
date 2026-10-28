@@ -25,6 +25,7 @@ export default function WorkCard({ work, index }) {
   const [tint, setTint] = useState(null)
   // 封面图 CDN 加载失败时回退 GitHub Pages 原站
   const [cdnFail, setCdnFail] = useState(false)
+  const [retry, setRetry] = useState(0) // 原站也失败后的整链路重试次数
   // CDN 请求「挂起不返回」时（不报错也不出图）自动超时回退原站——只处理视口内的图，
   // 避免误伤懒加载（视口外未加载的图 complete=false 但并非挂起）
   useEffect(() => {
@@ -37,6 +38,16 @@ export default function WorkCard({ work, index }) {
     }, 5000)
     return () => clearTimeout(t)
   }, [cdnFail, work.img])
+  // 原站也加载失败：不显示失败，按指数退避（2s→4s→8s→封顶16s）自动回到 CDN 重新加载，
+  // 持续重试直到封面成功显示（图恢复/缓存建立后自动出现）
+  useEffect(() => {
+    if (!cdnFail) return
+    const t = setTimeout(() => {
+      setCdnFail(false)
+      setRetry((r) => r + 1)
+    }, Math.min(2000 * Math.pow(2, Math.min(retry, 3)), 16000))
+    return () => clearTimeout(t)
+  }, [cdnFail, retry])
   useEffect(() => {
     if (!isUploadedCover) return
     // 依赖 work.img：云端数据异步加载完成后，work.img 从占位图变成真实上传封面，
