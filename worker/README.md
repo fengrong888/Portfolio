@@ -16,8 +16,11 @@ GitHub Pages is static hosting: a password check in JavaScript cannot protect th
    - `ALLOWED_ORIGIN`: `https://fengrong888.github.io`.
 4. Add a Worker secret named `GITHUB_TOKEN`. Use a fine-grained PAT scoped only to `fengrong888/Portfolio`, with Contents read/write and a short, reasonable expiry. Never put this token in GitHub Pages build variables or frontend source.
 5. Ensure Access is enabled on the Worker hostname and test that an unauthenticated request returns 401/Access denial, while an authenticated request can read the portfolio JSON.
-6. Only after those checks, migrate the frontend cloud sync to `/api/contents?path=...` at the Worker URL and remove the legacy browser token and password check.
-7. After the new path is confirmed working, revoke the old PAT that was entered in the browser. Do not revoke it before migration if the current live admin still depends on it.
+6. Set `ADMIN_API_URL` in `src/lib/adminConfig.js` to the Worker origin (for example, `https://portfolio-admin-api.example.workers.dev`) and redeploy the site. The frontend then sends GitHub Contents requests through the Worker, includes Access cookies, and removes the old PAT from that browser's localStorage.
+7. Test the live admin end-to-end: sign in through Access, sync the JSON file, upload an image, and verify another device sees the update. If CORS/Access redirects fail, do not continue; fix the Access app and allowed origin first.
+8. After the new path is confirmed working, revoke the old PAT that was entered in the browser. Do not revoke it before migration if the current live admin still depends on it.
+
+The UI and client library now support this Worker mode, but `ADMIN_API_URL` is intentionally empty by default. Until you deploy/configure the Worker and set that URL, the live site continues using the legacy flow.
 
 ## API contract
 
