@@ -133,6 +133,8 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
 
   // 详情图拖拽（Pointer 事件：鼠标/触屏通用）——拖拽期间只改内存实时跟手，松手一次性保存
   const onShotPointerDown = (e, i) => {
+    // 缩略图上的删除按钮、插图按钮和文件选择器应保留原生点击行为，不参与拖拽排序
+    if (e.target instanceof Element && e.target.closest('button, label, input')) return
     if (e.pointerType === 'mouse' && e.button !== 0) return
     e.preventDefault()
     e.stopPropagation()
