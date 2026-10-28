@@ -22,6 +22,35 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Validate required deployment secrets
+        shell: bash
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GH_CONTENTS_TOKEN: ${{ secrets.PORTFOLIO_GITHUB_TOKEN }}
+          ACCESS_TEAM_DOMAIN: ${{ secrets.CF_ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ secrets.CF_ACCESS_AUD }}
+        run: |
+          missing=0
+          for name in CF_API_TOKEN CF_ACCOUNT_ID GH_CONTENTS_TOKEN ACCESS_TEAM_DOMAIN ACCESS_AUD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing GitHub Actions secret required for Worker deployment: $name"
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - name: Set Worker secrets
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PORTFOLIO_GITHUB_TOKEN: ${{ secrets.PORTFOLIO_GITHUB_TOKEN }}
+          CF_ACCESS_TEAM_DOMAIN: ${{ secrets.CF_ACCESS_TEAM_DOMAIN }}
+          CF_ACCESS_AUD: ${{ secrets.CF_ACCESS_AUD }}
+        run: |
+          printf '%s' "$PORTFOLIO_GITHUB_TOKEN" | npx --yes wrangler@4 secret put GITHUB_TOKEN --config wrangler.jsonc
+          printf '%s' "$CF_ACCESS_TEAM_DOMAIN" | npx --yes wrangler@4 secret put CF_ACCESS_TEAM_DOMAIN --config wrangler.jsonc
+          printf '%s' "$CF_ACCESS_AUD" | npx --yes wrangler@4 secret put CF_ACCESS_AUD --config wrangler.jsonc
       - name: Deploy Worker
         run: npx --yes wrangler@4 deploy --config wrangler.jsonc
         env:
