@@ -149,7 +149,10 @@ export default function HeroIntro({ onDone }) {
       window.removeEventListener('touchmove', onTouch)
       timers.forEach((id) => window.clearTimeout(id))
       timers.clear()
-      active.forEach((a) => a.el.remove())
+      active.forEach((a) => {
+        a.done = true
+        a.el.remove()
+      })
     }
   }, [works])
 
