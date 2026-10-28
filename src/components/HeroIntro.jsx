@@ -33,6 +33,15 @@ export default function HeroIntro({ onDone }) {
 
     const rand = (min, max) => min + Math.random() * (max - min)
     const active = []
+    const timers = new Set()
+    const schedule = (fn, delay) => {
+      const id = window.setTimeout(() => {
+        timers.delete(id)
+        fn()
+      }, delay)
+      timers.add(id)
+      return id
+    }
     let lastMove = 0
     // 上一张生成时的鼠标位置（用于防止同一点重复生成堆积）
     let lastSpawnX = null
@@ -102,12 +111,12 @@ export default function HeroIntro({ onDone }) {
         img.decode().then(startIn).catch(startIn)
       }
       // 离场：由大到小缩放消失
-      setTimeout(() => {
+      schedule(() => {
         if (item.done) return
         el.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease-in'
         el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(0.04)`
         el.style.opacity = '0'
-        setTimeout(() => {
+        schedule(() => {
           el.remove()
           const i = active.indexOf(item)
           if (i !== -1) active.splice(i, 1)
@@ -137,6 +146,8 @@ export default function HeroIntro({ onDone }) {
     return () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('touchmove', onTouch)
+      timers.forEach((id) => window.clearTimeout(id))
+      timers.clear()
       active.forEach((a) => a.el.remove())
     }
   }, [works])
@@ -166,12 +177,17 @@ export default function HeroIntro({ onDone }) {
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
+    let closeTimer = null
     const close = () => {
+      if (closeTimer !== null) return
       stage.classList.add('hero-intro--out')
-      setTimeout(onDone, 1150)
+      closeTimer = window.setTimeout(onDone, 1150)
     }
     stage.addEventListener('click', close)
-    return () => stage.removeEventListener('click', close)
+    return () => {
+      stage.removeEventListener('click', close)
+      if (closeTimer !== null) window.clearTimeout(closeTimer)
+    }
   }, [onDone])
 
   return (
