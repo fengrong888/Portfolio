@@ -27,6 +27,7 @@ import {
   syncNow,
   migrateCloudImages,
   useCloudStatus,
+  isCdnBad,
 } from '../lib/edits'
 
 // 作品管理面板（Shift+E + 密码验证后打开）：
@@ -301,7 +302,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
             >
               <img
                 className="ap-cover-prev"
-                src={coverCdnFail ? coverSrc : jsdelivrUrl(coverSrc)}
+                src={coverCdnFail || isCdnBad() ? coverSrc : jsdelivrUrl(coverSrc)}
                 alt="封面预览"
                 draggable={false}
                 loading="lazy"

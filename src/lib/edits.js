@@ -682,6 +682,31 @@ export function jsdelivrUrl(rel) {
   return `https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/${p}`
 }
 
+// ---- CDN 智能熔断 ----
+// 部分网络（如某些国内运营商）下 jsDelivr 请求会「挂起不返回」：不报错也不出图，
+// 浏览器加载圈会一直转，图片长时间不显示。旧逻辑「CDN 挂起→回原站→失败→再回 CDN」
+// 可能形成循环。这里做熔断：连续 2 次观察到挂起即判定本网络 CDN 不可用，
+// 之后（30 分钟窗口内）所有图片与数据直连 GitHub 原站，不再发起 CDN 请求。
+let cdnHangs = 0
+const CDN_BAD_KEY = 'pf-cdn-bad'
+const CDN_BAD_WINDOW = 30 * 60 * 1000 // 30 分钟
+export function markCdnHang() {
+  cdnHangs += 1
+  if (cdnHangs >= 2) {
+    try {
+      localStorage.setItem(CDN_BAD_KEY, String(Date.now()))
+    } catch { /* ignore */ }
+  }
+}
+export function isCdnBad() {
+  try {
+    const t = Number(localStorage.getItem(CDN_BAD_KEY) || 0)
+    return t > 0 && Date.now() - t < CDN_BAD_WINDOW
+  } catch {
+    return false
+  }
+}
+
 // 竞速取第一个成功的结果（兼容 es2018，不使用 Promise.any）
 function firstOk(ps) {
   return new Promise((resolve, reject) => {
@@ -720,14 +745,14 @@ export async function loadCloud() {
       if (!r.ok) throw new Error(`source ${r.status}`)
       return r.json()
     })
-  const sources = [
-    // jsDelivr CDN（国内节点，带时间戳防缓存；CLOUD_FILE 已含 docs/ 前缀，不可重复拼 docs/）
-    mk(`https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/${CLOUD_FILE}?t=${ts}`, 5000),
-    // 站内数据文件（部署根相对路径）
-    mk(`./data/portfolio-data.json?t=${ts}`, 5000),
-    // raw 源兜底
-    mk(`https://raw.githubusercontent.com/${CLOUD_REPO}/main/${CLOUD_FILE}?t=${ts}`, 5000)
-  ]
+  const sources = []
+  // jsDelivr CDN（国内节点，带时间戳防缓存；CLOUD_FILE 已含 docs/ 前缀，不可重复拼 docs/）
+  // 熔断期内跳过 CDN，避免每次刷新都白等一个挂起请求
+  if (!isCdnBad()) sources.push(mk(`https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/${CLOUD_FILE}?t=${ts}`, 3500))
+  // 站内数据文件（部署根相对路径）
+  sources.push(mk(`./data/portfolio-data.json?t=${ts}`, 5000))
+  // raw 源兜底
+  sources.push(mk(`https://raw.githubusercontent.com/${CLOUD_REPO}/main/${CLOUD_FILE}?t=${ts}`, 5000))
   try {
     data = await firstOk(sources)
   } catch {

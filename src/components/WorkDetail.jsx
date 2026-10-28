@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useWorks, jsdelivrUrl } from '../lib/edits'
+import { useWorks, jsdelivrUrl, markCdnHang, isCdnBad } from '../lib/edits'
 import { observeIn, unobserveIn } from '../lib/motion'
 import Editable from './Editable'
 
@@ -42,7 +42,10 @@ function DetailFigure({ src, alt }) {
       }
       if (!el.complete && !el.naturalWidth) {
         hang += 1
-        if (hang >= 2) setStage((s) => Math.min(s + 1, 2))
+        if (hang >= 2) {
+          markCdnHang() // 挂起计数：连续 2 次触发熔断，本网络 30 分钟内不再走 CDN
+          setStage((s) => Math.min(s + 1, 2))
+        }
       } else {
         hang = 0
       }
@@ -50,18 +53,22 @@ function DetailFigure({ src, alt }) {
     return () => clearInterval(iv)
   }, [stage, src])
 
-  // 整链路都失败：不显示失败提示，按指数退避等待后自动从 CDN 重新加载
-  // （2s → 4s → 8s → 16s → 封顶 16s，持续重试直到图成功显示）
+  // 整链路都失败：不显示失败提示，按指数退避等待后自动重试
+  // （2s → 4s → 8s → 16s → 封顶 16s）。CDN 未熔断时回到 CDN 重新加载，
+  // 已熔断则留在原站带时间戳重试——避免「CDN 挂起→回原站→再回 CDN」死循环
+  // （浏览器加载圈一直转的根因）
   useEffect(() => {
     if (stage < 2) return
     const t = setTimeout(() => {
-      setStage(0)
+      setStage(isCdnBad() ? 1 : 0)
       setAttempt((a) => a + 1)
     }, Math.min(2000 * Math.pow(2, Math.min(attempt, 3)), 16000))
     return () => clearTimeout(t)
   }, [stage, attempt])
 
-  const cdnSrc = stage === 0 ? jsdelivrUrl(src) : src
+  // 熔断期内直接走原站（不再请求 CDN）；原站重试带时间戳参数强制刷新
+  const useCdn = stage === 0 && !isCdnBad()
+  const cdnSrc = useCdn ? `${jsdelivrUrl(src)}${attempt ? `?r=${attempt}` : ''}` : `${src}${src.includes('?') ? '&' : '?'}r=${attempt}`
 
   return (
     <figure ref={ref} className="detail__figure">

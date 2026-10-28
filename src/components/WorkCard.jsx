@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useMotionValue, useSpring } from 'motion/react'
 import gsap from 'gsap'
-import { useEditing, extractDominantColor, jsdelivrUrl } from '../lib/edits'
+import { useEditing, extractDominantColor, jsdelivrUrl, markCdnHang, isCdnBad } from '../lib/edits'
 import Editable from './Editable'
 
 // 悬停动效（GSAP）：纯色层淡入淡出；简介三行依次上移淡入；另叠加 3D 倾斜
@@ -44,30 +44,43 @@ export default function WorkCard({ work, index }) {
       }
       if (!el.complete && !el.naturalWidth) {
         hang += 1
-        if (hang >= 2) setCdnFail(true)
+        if (hang >= 2) {
+          markCdnHang() // 挂起计数：连续 2 次触发熔断，本网络 30 分钟内不再走 CDN
+          setCdnFail(true)
+        }
       } else {
         hang = 0
       }
     }, 1500)
     return () => clearInterval(iv)
   }, [cdnFail, work.img])
-  // 原站也加载失败：不显示失败，按指数退避（2s→4s→8s→封顶16s）自动回到 CDN 重新加载，
-  // 持续重试直到封面成功显示（图恢复/缓存建立后自动出现）
+  // 原站也加载失败：不显示失败，按指数退避（2s→4s→8s→封顶16s）自动重试；
+  // CDN 未熔断时回到 CDN 重新加载，已熔断则留在原站带时间戳重试——
+  // 避免「CDN 挂起→回原站→再回 CDN」死循环（浏览器加载圈一直转的根因）
   useEffect(() => {
     if (!cdnFail) return
     const t = setTimeout(() => {
-      setCdnFail(false)
+      if (isCdnBad()) {
+        const el = imgRef.current
+        if (el && work.img) {
+          const sep = work.img.includes('?') ? '&' : '?'
+          el.src = `${work.img}${sep}r=${retry + 1}`
+        }
+      } else {
+        setCdnFail(false)
+      }
       setRetry((r) => r + 1)
     }, Math.min(2000 * Math.pow(2, Math.min(retry, 3)), 16000))
     return () => clearTimeout(t)
-  }, [cdnFail, retry])
+  }, [cdnFail, retry, work.img])
   useEffect(() => {
     if (!isUploadedCover) return
     // 依赖 work.img：云端数据异步加载完成后，work.img 从占位图变成真实上传封面，
     // 依赖变化会重新提取主色，确保任何设备/任何加载时机都能匹配出作品色彩。
-    // 提取优先走 jsDelivr CDN（国内快、带 CORS），失败再回退 GitHub 原站相对路径
+    // 提取优先走 jsDelivr CDN（国内快、带 CORS），失败再回退 GitHub 原站相对路径；
+    // CDN 熔断期内直接走原站（避免再发起挂起的 CDN 请求拖住加载圈）
     let cancel = false
-    extractDominantColor(jsdelivrUrl(work.img), work.id).then((c) => {
+    extractDominantColor(isCdnBad() ? work.img : jsdelivrUrl(work.img), work.id).then((c) => {
       if (cancel) return
       if (c) setTint(c)
       else extractDominantColor(work.img, work.id).then((c2) => c2 && !cancel && setTint(c2))
@@ -197,7 +210,7 @@ export default function WorkCard({ work, index }) {
           <img
             className="card__img"
             ref={imgRef}
-            src={cdnFail ? work.img : jsdelivrUrl(work.img)}
+            src={cdnFail || isCdnBad() ? work.img : jsdelivrUrl(work.img)}
             alt={work.title}
             loading="lazy"
             decoding="async"
