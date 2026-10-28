@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portfolio-admin",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-28",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGIN": "https://fengrong888.github.io"
+  }
+}
