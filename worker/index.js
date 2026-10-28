@@ -143,6 +143,11 @@ export default {
     if (!allowedPath(path)) {
       return response(JSON.stringify({ error: 'Path not allowed' }), 400, cors);
     }
+    // Keep the data document writable, but never deletable. Image files may be deleted.
+    // This prevents a valid Access session from accidentally deleting the whole portfolio dataset.
+    if (request.method === 'DELETE' && path === JSON_FILE) {
+      return response(JSON.stringify({ error: 'The portfolio data file cannot be deleted' }), 405, { ...cors, Allow: 'GET, PUT, OPTIONS' });
+    }
 
     let body;
     if (request.method !== 'GET') {
