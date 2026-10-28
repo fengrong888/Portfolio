@@ -118,6 +118,7 @@ export default function HeroIntro({ onDone }) {
         el.style.transform = `translate(-50%, -50%) rotate(${rot}deg) scale(0.04)`
         el.style.opacity = '0'
         schedule(() => {
+          item.done = true
           el.remove()
           const i = active.indexOf(item)
           if (i !== -1) active.splice(i, 1)
