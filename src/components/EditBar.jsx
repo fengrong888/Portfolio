@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { setEditing, useEditing, useAuthorized, checkPassword } from '../lib/edits'
+import { setEditing, useEditing, useAuthorized, checkPassword, isAdminWorkerConfigured } from '../lib/edits'
 
 // 后台入口：Shift+E 唤起。需要输入后台密码，避免访客进入管理面板。
 // 同一浏览器会话内验证通过后免重复输入（关闭标签页失效）。
@@ -18,7 +18,7 @@ export default function EditBar() {
           setEditing(false)
           return
         }
-        if (authorized) {
+        if (isAdminWorkerConfigured() || authorized) {
           setEditing(true)
         } else {
           setAskPw(true)
