@@ -679,7 +679,7 @@ function cloudURL(path) {
   return `https://api.github.com/repos/${CLOUD_REPO}/contents/${path}`
 }
 function adminApiURL(path) {
-  const url = new URL(`${ADMIN_API_URL.replace(/\\/+$/, '')}/api/contents`)
+  const url = new URL(`${ADMIN_API_URL.replace(/\/+$/, '')}/api/contents`)
   url.searchParams.set('path', path)
   return url.toString()
 }
