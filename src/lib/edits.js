@@ -648,50 +648,58 @@ export function jsdelivrUrl(rel) {
   return `https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/${p}`
 }
 
-// 读取云端数据：优先 GitHub API（实时返回，绕过 Pages CDN 缓存，修改后立即生效）；
-// API 不可达时回退 raw CDN，再回退站内数据文件（GitHub Pages 托管仓库文件，天然最新）。
+// 竞速取第一个成功的结果（兼容 es2018，不使用 Promise.any）
+function firstOk(ps) {
+  return new Promise((resolve, reject) => {
+    let pending = ps.length
+    let done = false
+    ps.forEach((p) =>
+      p.then(
+        (v) => {
+          if (!done) {
+            done = true
+            resolve(v)
+          }
+        },
+        () => {
+          if (--pending === 0 && !done) {
+            done = true
+            reject(new Error('all sources failed'))
+          }
+        }
+      )
+    )
+  })
+}
+
+// 读取云端数据：多个数据源「并行竞速」，谁先成功用谁（不再串行干等超时）：
+// 1) jsDelivr 国内 CDN —— 国内最快，优先命中
+// 2) 站内数据文件（GitHub Pages）—— 仓库内最新，天然兜底
+// 3) raw.githubusercontent.com —— 最后一层兜底
+// 全部失败时回到本地缓存继续显示。带令牌的 GitHub API 仅用于后台同步（syncNow），
+// 读取环节不依赖它——避免国内网络不可达时白白等待 7~13 秒。
 export async function loadCloud() {
   let data = null
-  // 优先带令牌认证读取（避免匿名接口限流导致读不到云端数据）
-  const headers = { Accept: 'application/vnd.github+json' }
-  if (token) headers.Authorization = `Bearer ${token}`
+  const ts = Date.now()
+  const mk = (url, ms) =>
+    fetchTimeout(url, { cache: 'no-store' }, ms).then(async (r) => {
+      if (!r.ok) throw new Error(`source ${r.status}`)
+      return r.json()
+    })
+  const sources = [
+    // jsDelivr CDN（国内节点，带时间戳防缓存）
+    mk(`https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/docs/${CLOUD_FILE}?t=${ts}`, 5000),
+    // 站内数据文件（部署根相对路径）
+    mk(`./data/portfolio-data.json?t=${ts}`, 5000),
+    // raw 源兜底
+    mk(`https://raw.githubusercontent.com/${CLOUD_REPO}/main/${CLOUD_FILE}?t=${ts}`, 5000)
+  ]
   try {
-    const res = await fetchTimeout(
-      `https://api.github.com/repos/${CLOUD_REPO}/contents/${CLOUD_FILE}`,
-      { headers, cache: 'no-store' },
-      7000
-    )
-    if (res.ok) {
-      const j = await res.json()
-      data = JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g, '')))))
-    }
+    data = await firstOk(sources)
   } catch {
-    /* 回退 raw CDN */
-  }
-  if (!data) {
-    try {
-      // raw CDN 兜底（带时间戳防缓存）
-      const res = await fetchTimeout(
-        `https://raw.githubusercontent.com/${CLOUD_REPO}/main/${CLOUD_FILE}?t=${Date.now()}`,
-        { cache: 'no-store' },
-        6000
-      )
-      if (!res.ok) throw new Error(`raw ${res.status}`)
-      data = await res.json()
-    } catch {
-      /* 回退站内文件 */
-    }
-  }
-  if (!data) {
-    try {
-      const res = await fetch('./data/portfolio-data.json', { cache: 'no-store' })
-      if (!res.ok) throw new Error(`cloud file ${res.status}`)
-      data = await res.json()
-    } catch {
-      cloudLoaded = false
-      notifyCloud()
-      return
-    }
+    cloudLoaded = false
+    notifyCloud()
+    return
   }
   cloudEdits = data.edits && typeof data.edits === 'object' ? data.edits : {}
   cloudImages = data.images && typeof data.images === 'object' ? data.images : {}
