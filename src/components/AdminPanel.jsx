@@ -527,40 +527,41 @@ export default function AdminPanel() {
     setEditing(false)
   }
   // 右上角 ×：若有未保存的文字修改先提醒；确认保存则提交草稿并关闭（云端同步后台继续），放弃则直接关闭
-  const handleClose = () => {
+  const handleClose = async () => {
     if (anyDirty) {
       const saveFirst = window.confirm(
-        '有修改尚未保存，是否保存并关闭？\n\n点「确定」= 保存并关闭\n点「取消」= 继续编辑'
+        '有修改尚未保存，是否保存并关闭？\n\n点「确定」= 保存并同步后关闭\n点「取消」= 继续编辑'
       )
-      if (saveFirst) {
-        window.dispatchEvent(new CustomEvent('admin-commit'))
-        if (cloud.configured) {
-          ;(async () => {
-            try {
-              await migrateCloudImages()
-              await syncNow()
-            } catch { /* 后台同步失败不影响关闭 */ }
-          })()
-        }
-        setEditing(false)
+      if (!saveFirst) {
+        // 未选择保存：再确认是否放弃修改直接关闭
+        const discard = window.confirm(
+          '放弃未保存的文字修改并直接关闭？\n\n点「确定」= 放弃文字草稿并关闭\n点「取消」= 返回后台继续编辑'
+        )
+        if (discard) setEditing(false)
         return
       }
-      // 未选择保存：再确认是否放弃修改直接关闭
-      const discard = window.confirm(
-        '放弃未保存的修改并直接关闭？\n\n点「确定」= 不保存，直接关闭\n点「取消」= 返回后台继续编辑'
-      )
-      if (!discard) return
-      setEditing(false)
-      return
     }
+
+    // 先提交所有行的草稿，再等待 React 状态落地，最后同步云端。
     window.dispatchEvent(new CustomEvent('admin-commit'))
     if (cloud.configured) {
-      ;(async () => {
-        try {
-          await migrateCloudImages()
-          await syncNow()
-        } catch { /* 后台同步失败不影响关闭 */ }
-      })()
+      setSyncing(true)
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        const migration = await migrateCloudImages()
+        if (!migration.ok) throw new Error(migration.error || '图片同步失败')
+        const sync = await syncNow()
+        if (!sync.ok) throw new Error(sync.error || '数据同步失败')
+      } catch (error) {
+        window.alert(
+          '⚠ 关闭后台前同步失败：' +
+            (error?.message || '网络或令牌问题') +
+            '\n\n后台仍保持打开，修改保留在当前浏览器。请检查网络和令牌权限后重试；确认同步成功后再关闭。'
+        )
+        setSyncing(false)
+        return
+      }
+      setSyncing(false)
     }
     setEditing(false)
   }
