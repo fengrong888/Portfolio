@@ -26,18 +26,28 @@ function DetailFigure({ src, alt }) {
   }, [])
 
   // 图片「挂起不返回」超时兜底：CDN 请求不报错也不返回时，视口内的图
-  // 6s 后强制推进到下一来源（CDN → 原站），避免黑块/白屏久等
+  // 1.5s 轮询、连续 2 次未完成（约 3s）即推进到下一来源（CDN → 原站），
+  // 避免黑块/白屏久等（旧的单次 6s 检测太慢）
   useEffect(() => {
     if (stage >= 2) return
-    const t = setTimeout(() => {
+    let hang = 0
+    const iv = setInterval(() => {
       const el = ref.current?.querySelector('img')
       if (!el) return
       const r = el.getBoundingClientRect()
-      if (r.top < window.innerHeight && r.bottom > 0 && !el.complete) {
-        setStage((s) => Math.min(s + 1, 2))
+      const inView = r.top < window.innerHeight && r.bottom > 0
+      if (!inView) {
+        hang = 0
+        return
       }
-    }, 6000)
-    return () => clearTimeout(t)
+      if (!el.complete && !el.naturalWidth) {
+        hang += 1
+        if (hang >= 2) setStage((s) => Math.min(s + 1, 2))
+      } else {
+        hang = 0
+      }
+    }, 1500)
+    return () => clearInterval(iv)
   }, [stage, src])
 
   // 整链路都失败：不显示失败提示，按指数退避等待后自动从 CDN 重新加载

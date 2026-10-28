@@ -26,17 +26,30 @@ export default function WorkCard({ work, index }) {
   // 封面图 CDN 加载失败时回退 GitHub Pages 原站
   const [cdnFail, setCdnFail] = useState(false)
   const [retry, setRetry] = useState(0) // 原站也失败后的整链路重试次数
-  // CDN 请求「挂起不返回」时（不报错也不出图）自动超时回退原站——只处理视口内的图，
-  // 避免误伤懒加载（视口外未加载的图 complete=false 但并非挂起）
+  // CDN 请求「挂起不返回」时（不报错也不出图）自动超时回退原站。
+  // 1.5s 轮询：仅统计视口内且请求确实未完成（!complete && !naturalWidth）的图，
+  // 连续 2 次命中（约 3s）即回退——不再像旧的单次 5s 检测那样让人久等黑块，
+  // 也不误伤视口外懒加载（视口外未请求的图 complete=false 属正常）
   useEffect(() => {
     if (cdnFail) return
-    const t = setTimeout(() => {
+    let hang = 0
+    const iv = setInterval(() => {
       const el = imgRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
-      if (r.top < window.innerHeight && r.bottom > 0 && !el.complete) setCdnFail(true)
-    }, 5000)
-    return () => clearTimeout(t)
+      const inView = r.top < window.innerHeight && r.bottom > 0
+      if (!inView) {
+        hang = 0
+        return
+      }
+      if (!el.complete && !el.naturalWidth) {
+        hang += 1
+        if (hang >= 2) setCdnFail(true)
+      } else {
+        hang = 0
+      }
+    }, 1500)
+    return () => clearInterval(iv)
   }, [cdnFail, work.img])
   // 原站也加载失败：不显示失败，按指数退避（2s→4s→8s→封顶16s）自动回到 CDN 重新加载，
   // 持续重试直到封面成功显示（图恢复/缓存建立后自动出现）
