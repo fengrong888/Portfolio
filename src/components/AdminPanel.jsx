@@ -465,14 +465,19 @@ export default function AdminPanel() {
         setMigMsg(cloud.expired ? '⚠ 令牌已失效，请重新输入有效令牌' : `连接失败：${r.error || '网络问题'}`)
         return
       }
-      // 首次连接后自动把本机已上传的图片静默推送到云端
+      // 首次连接后迁移本机图片；迁移失败时明确提示，避免误报连接完成
       try {
         const m = await migrateCloudImages()
-        setMigMsg(m.ok && m.migrated ? `✓ 已连接并同步 ${m.migrated} 张图片` : '✓ 已连接云端')
-      } catch {
-        setMigMsg('✓ 已连接云端')
+        if (!m.ok) {
+          setMigMsg(`⚠ 云端已连接，但图片同步失败：${m.error || '请重试'}`)
+          return
+        }
+        setMigMsg(m.migrated ? `✓ 已连接并同步 ${m.migrated} 张图片` : '✓ 已连接云端')
+      } catch (e) {
+        setMigMsg(`⚠ 云端已连接，但图片同步失败：${e?.message || '请重试'}`)
+        return
       }
-      setTimeout(() => setMigMsg(''), 3000)
+      setTimeout(() => setMigMsg(''), 4000)
     }
   }
   const handleDone = async () => {
@@ -484,15 +489,17 @@ export default function AdminPanel() {
     if (cloud.configured) {
       setSyncing(true)
       try {
-        await migrateCloudImages()
-        await syncNow()
+        const migration = await migrateCloudImages()
+        if (!migration.ok) throw new Error(migration.error || '图片同步失败')
+        const sync = await syncNow()
+        if (!sync.ok) throw new Error(sync.error || '数据同步失败')
       } catch (e) {
         setSyncing(false)
         // 同步失败：明确提示，不静默关闭，方便定位问题
         window.alert(
           '⚠ 同步失败：' +
             (e && e.message ? e.message : '网络或令牌问题') +
-            '\n\n请确认：\n1. 云端令牌仍有效（可重新粘贴令牌）\n2. 网络可访问 GitHub\n然后重新点「完成（自动同步）」'
+            '\n\n修改仍保留在当前浏览器，请检查令牌权限和网络后重试。\n然后重新点「完成（自动同步）」'
         )
         return
       }
