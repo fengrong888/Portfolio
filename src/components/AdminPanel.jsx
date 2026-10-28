@@ -471,27 +471,29 @@ export default function AdminPanel() {
   const [doneMsg, setDoneMsg] = useState(false)
 
   const handleSaveToken = async () => {
-    setCloudToken(tok)
-    if (tok.trim()) {
-      setMigMsg('正在连接云端…')
+    const token = tok.trim()
+    if (!token) {
+      setMigMsg('请先输入 GitHub 访问令牌')
+      return
+    }
+    setCloudToken(token)
+    setMigMsg('正在连接云端…')
+    try {
       const r = await syncNow()
       if (!r.ok) {
         setMigMsg(cloud.expired ? '⚠ 令牌已失效，请重新输入有效令牌' : `连接失败：${r.error || '网络问题'}`)
         return
       }
       // 首次连接后迁移本机图片；迁移失败时明确提示，避免误报连接完成
-      try {
-        const m = await migrateCloudImages()
-        if (!m.ok) {
-          setMigMsg(`⚠ 云端已连接，但图片同步失败：${m.error || '请重试'}`)
-          return
-        }
-        setMigMsg(m.migrated ? `✓ 已连接并同步 ${m.migrated} 张图片` : '✓ 已连接云端')
-      } catch (e) {
-        setMigMsg(`⚠ 云端已连接，但图片同步失败：${e?.message || '请重试'}`)
+      const m = await migrateCloudImages()
+      if (!m.ok) {
+        setMigMsg(`⚠ 云端已连接，但图片同步失败：${m.error || '请重试'}`)
         return
       }
+      setMigMsg(m.migrated ? `✓ 已连接并同步 ${m.migrated} 张图片` : '✓ 已连接云端')
       setTimeout(() => setMigMsg(''), 4000)
+    } catch (error) {
+      setMigMsg(`连接失败：${error?.message || '网络异常，请检查连接后重试'}`)
     }
   }
   const handleDone = async () => {
