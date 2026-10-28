@@ -41,6 +41,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const [upShots, setUpShots] = useState(false)
   // 上传中：'cover' | 'shots' | 'insert' | null
   const [busy, setBusy] = useState(null)
+  const [uploadError, setUploadError] = useState('')
   const [shotDrag, setShotDrag] = useState(null) // 详情图拖拽：起始 index（视觉反馈）
   const [shotOver, setShotOver] = useState(null) // 详情图拖拽：目标插入位
   const [liveShots, setLiveShots] = useState(null) // 拖拽中的实时顺序（松手后统一保存）
@@ -169,34 +170,43 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   }
 
   const onCover = async (e) => {
-    const file = e.target.files?.[0]
+    const input = e.target
+    const file = input.files?.[0]
     if (!file) return
     setBusy('cover')
+    setUploadError('')
     try {
       const dataUrl = await compressImage(file, 700, 0.85)
       await putImage(`work-${id}-img`, dataUrl)
       setUpCover(true)
       setTimeout(() => setUpCover(false), 1600)
+    } catch (error) {
+      setUploadError(`封面上传失败：${error?.message || '图片处理或存储失败，请换一张图片重试'}`)
     } finally {
       setBusy(null)
+      // 成功或失败都重置 input，允许再次选择同一个文件
+      input.value = ''
     }
-    if (coverRef.current) coverRef.current.value = ''
   }
 
   const onShots = async (e) => {
-    const files = Array.from(e.target.files || [])
+    const input = e.target
+    const files = Array.from(input.files || [])
     if (!files.length) return
     setBusy('shots')
+    setUploadError('')
     try {
       const urls = await Promise.all(files.map((f) => compressImage(f, 1800, 0.8)))
       // 新增追加：保留已有详情图，新图排在末尾
       await putImage(`work-${id}-shots`, JSON.stringify([...shownShots, ...urls]))
       setUpShots(true)
       setTimeout(() => setUpShots(false), 1600)
+    } catch (error) {
+      setUploadError(`详情图上传失败：${error?.message || '图片处理或存储失败，请减少图片数量或换图重试'}`)
     } finally {
       setBusy(null)
+      input.value = ''
     }
-    if (shotsRef.current) shotsRef.current.value = ''
   }
 
   // 多张插入：index 位置一次插入多张（index 为 shots.length 时表示末尾追加）
@@ -204,14 +214,16 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     setBusy('insert')
+    setUploadError('')
     try {
       const urls = await Promise.all(files.map((f) => compressImage(f, 1800, 0.8)))
       const next = [...shownShots.slice(0, index), ...urls, ...shownShots.slice(index)]
       await putImage(`work-${id}-shots`, JSON.stringify(next))
+    } catch (error) {
+      setUploadError(`插入详情图失败：${error?.message || '图片处理或存储失败，请重试'}`)
     } finally {
       setBusy(null)
-      // 清空触发本次上传的 input（历史 bug：多 label 共用 insertRef 会清错对象，
-      // 导致再次选择同一文件时 onChange 不触发、无法重复插入）
+      // 清空本次触发的 input，成功或失败后均可重复选择同一文件
       e.target.value = ''
     }
   }
@@ -333,6 +345,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
             </div>
           </div>
 
+          {uploadError && <p className="ap-row__note" role="alert">{uploadError}</p>}
           <div className="ap-shots">
             <span className="ap-row__imgs-label">
               详情图（{shownShots.length} 张）：直接拖动缩略图即可调整顺序；每张可删除，或在任意一张前 / 后插入新图
