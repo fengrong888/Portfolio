@@ -473,10 +473,15 @@ export function compressImage(file, maxSide = 1400, quality = 0.82) {
         c.getContext('2d').drawImage(img, 0, 0, w, h)
         // 输出 WebP（体积约为 JPEG 的 1/3，全端支持），失败时回退 JPEG
         try {
-          const out = c.toDataURL('image/webp', quality)
+          let out = c.toDataURL('image/webp', quality)
+          // 压缩后仍过大（极端复杂原图）：逐级降质量，保证单图 ≤ 1.5MB
+          if (out.length > 1572864) out = c.toDataURL('image/webp', Math.max(0.45, quality - 0.2))
+          if (out.length > 1572864) out = c.toDataURL('image/webp', 0.45)
           if (out.startsWith('data:image/webp')) return resolve(out)
         } catch { /* fallthrough */ }
-        resolve(c.toDataURL('image/jpeg', quality))
+        let jout = c.toDataURL('image/jpeg', quality)
+        if (jout.length > 1572864) jout = c.toDataURL('image/jpeg', Math.max(0.5, quality - 0.25))
+        resolve(jout)
       }
       img.onerror = reject
       img.src = reader.result
