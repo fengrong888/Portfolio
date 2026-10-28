@@ -23,6 +23,21 @@ function DetailFigure({ src, alt }) {
     }
   }, [])
 
+  // 图片「挂起不返回」超时兜底：CDN 请求不报错也不返回时，视口内的图
+  // 6s 后强制推进到下一来源（CDN → 原站 → 失败提示），避免黑块/白屏久等
+  useEffect(() => {
+    if (stage >= 2) return
+    const t = setTimeout(() => {
+      const el = ref.current?.querySelector('img')
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      if (r.top < window.innerHeight && r.bottom > 0 && !el.complete) {
+        setStage((s) => Math.min(s + 1, 2))
+      }
+    }, 6000)
+    return () => clearTimeout(t)
+  }, [stage, src])
+
   const cdnSrc = stage === 0 ? jsdelivrUrl(src) : src
 
   return (

@@ -25,6 +25,18 @@ export default function WorkCard({ work, index }) {
   const [tint, setTint] = useState(null)
   // 封面图 CDN 加载失败时回退 GitHub Pages 原站
   const [cdnFail, setCdnFail] = useState(false)
+  // CDN 请求「挂起不返回」时（不报错也不出图）自动超时回退原站——只处理视口内的图，
+  // 避免误伤懒加载（视口外未加载的图 complete=false 但并非挂起）
+  useEffect(() => {
+    if (cdnFail) return
+    const t = setTimeout(() => {
+      const el = imgRef.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      if (r.top < window.innerHeight && r.bottom > 0 && !el.complete) setCdnFail(true)
+    }, 5000)
+    return () => clearTimeout(t)
+  }, [cdnFail, work.img])
   useEffect(() => {
     if (!isUploadedCover) return
     // 依赖 work.img：云端数据异步加载完成后，work.img 从占位图变成真实上传封面，
@@ -165,6 +177,7 @@ export default function WorkCard({ work, index }) {
             alt={work.title}
             loading="lazy"
             decoding="async"
+            fetchPriority={index < 12 ? 'high' : 'auto'}
             onError={() => setCdnFail(true)}
           />
         </div>

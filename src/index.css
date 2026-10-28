@@ -268,6 +268,8 @@ dl, dd { margin: 0; }
   position: absolute;
   inset: 0;
   will-change: transform;
+  /* 图片未加载完成时的占位底色（深灰而非纯黑，区分「加载中」与「空」） */
+  background: #191919;
 }
 
 .card__img {
