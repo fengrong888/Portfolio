@@ -297,27 +297,13 @@ export function useWorks() {
   return useSyncExternalStore(subscribeEdits, buildWorks)
 }
 
-// ---------- 权限：后台入口密码（轻量防误入，非强安全） ----------
-// 如需修改密码，把下方字符串发给我即可更新并部署。
-const ADMIN_PASSWORD = '120589'
+// ---------- 后台身份状态 ----------
+// 不再把前端硬编码密码或 sessionStorage 标记当作安全认证。
+// 真正的写入权限由 Cloudflare Access + Worker 在服务端验证。
 let authorized = false
-try {
-  authorized = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('portfolio-admin-ok') === '1'
-} catch {
-  authorized = false
-}
 export const isAuthorized = () => authorized
-export function checkPassword(pw) {
-  if (pw === ADMIN_PASSWORD) {
-    authorized = true
-    try {
-      sessionStorage.setItem('portfolio-admin-ok', '1')
-    } catch {
-      /* ignore */
-    }
-    listeners.forEach((l) => l())
-    return true
-  }
+export function checkPassword() {
+  // Compatibility stub: password-only authentication has intentionally been removed.
   return false
 }
 export function useAuthorized() {
