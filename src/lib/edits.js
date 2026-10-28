@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { ADMIN_API_URL } from './adminConfig'
 
 // 在线文字编辑：修改存入 localStorage（当前浏览器内刷新保留），
 // 点「导出文本」下载 JSON，发回后可将内容固化进源码、永久发布给所有人。
@@ -561,6 +562,11 @@ const TOKEN_KEY = 'pf-github-token'
 let token = ''
 try {
   token = localStorage.getItem(TOKEN_KEY) || ''
+  // Once the protected Worker is configured, remove the old browser-held PAT from this device.
+  if (ADMIN_API_URL) {
+    token = ''
+    localStorage.removeItem(TOKEN_KEY)
+  }
 } catch {
   token = ''
 }
@@ -574,8 +580,18 @@ let lastSyncAt = 0
 let syncTimer = 0
 const cloudListeners = new Set()
 
-export const getCloudToken = () => token
+export const getCloudToken = () => (ADMIN_API_URL ? '' : token)
+export function isAdminWorkerConfigured() {
+  return !!ADMIN_API_URL
+}
 export function setCloudToken(t) {
+  if (ADMIN_API_URL) {
+    token = ''
+    try { localStorage.removeItem(TOKEN_KEY) } catch { /* ignore */ }
+    tokenExpired = false
+    notifyCloud()
+    return
+  }
   token = (t || '').trim()
   try {
     if (token) localStorage.setItem(TOKEN_KEY, token)
@@ -597,6 +613,20 @@ function markTokenExpired() {
 
 // 主动校验令牌有效性（后台打开时调用）：GET /user，401/403 = 过期
 export async function checkTokenValidity() {
+  if (ADMIN_API_URL) {
+    try {
+      const res = await fetchTimeout(adminApiURL(CLOUD_FILE), { credentials: 'include', headers: { Accept: 'application/vnd.github+json' } }, 8000)
+      syncError = res.ok ? '' : (res.status === 401 || res.status === 403 ? 'Cloudflare Access 身份验证失败，请先登录' : `云端连接失败：HTTP ${res.status}`)
+      tokenExpired = false
+      notifyCloud()
+      return { ok: res.ok, expired: false }
+    } catch {
+      syncError = '无法连接安全后台接口，请检查 Cloudflare Access 登录状态与网络'
+      tokenExpired = false
+      notifyCloud()
+      return { ok: false, expired: false }
+    }
+  }
   if (!token) {
     tokenExpired = false
     notifyCloud()
@@ -624,7 +654,7 @@ export function subscribeCloud(fn) {
 let cloudStatusCache = null
 export function getCloudStatus() {
   const s = {
-    configured: !!token,
+    configured: !!token || !!ADMIN_API_URL,
     syncing,
     error: syncError,
     lastSync: lastSyncAt,
@@ -648,17 +678,29 @@ function notifyCloud() {
 function cloudURL(path) {
   return `https://api.github.com/repos/${CLOUD_REPO}/contents/${path}`
 }
+function adminApiURL(path) {
+  const url = new URL(`${ADMIN_API_URL.replace(/\\/+$/, '')}/api/contents`)
+  url.searchParams.set('path', path)
+  return url.toString()
+}
 async function ghFetch(path, init) {
-  const res = await fetchTimeout(cloudURL(path), {
+  const workerMode = !!ADMIN_API_URL
+  const res = await fetchTimeout(workerMode ? adminApiURL(path) : cloudURL(path), {
     ...init,
+    ...(workerMode ? { credentials: 'include' } : {}),
     headers: {
       Accept: 'application/vnd.github+json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(!workerMode && token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers || {}),
     },
   }, 8000)
-  // 令牌过期/无权限：自动标记，后台弹出重新输入窗口
-  if (res.status === 401 || res.status === 403) markTokenExpired()
+  // Legacy mode checks PAT validity; Worker mode reports Access errors without prompting for a browser PAT.
+  if (res.status === 401 || res.status === 403) {
+    if (workerMode) {
+      syncError = 'Cloudflare Access 身份验证失败，请先登录'
+      notifyCloud()
+    } else markTokenExpired()
+  }
   return res
 }
 
@@ -809,7 +851,7 @@ function persistLocal(v) {
 
 // 触发云端同步（防抖）：文本、排序、删除、图片变化后自动调用
 function queueSync(delay = 600) {
-  if (!token) return
+  if (!token && !ADMIN_API_URL) return
   if (syncTimer) clearTimeout(syncTimer)
   syncTimer = setTimeout(() => {
     syncNow()
@@ -828,7 +870,7 @@ export async function syncNow() {
 }
 
 async function doSyncNow() {
-  if (!token) return { ok: false, error: 'no-token' }
+  if (!token && !ADMIN_API_URL) return { ok: false, error: 'no-token' }
   if (syncing) return { ok: false, error: 'busy' }
   syncing = true
   syncError = ''
@@ -937,7 +979,7 @@ async function ghDeleteImage(relPath) {
 
 // 图片上传后的云端同步：dataURL -> 上传 -> 就地替换为路径
 async function syncImageToCloud(key, value) {
-  if (!token) return value
+  if (!token && !ADMIN_API_URL) return value
   if (typeof value === 'string' && value.startsWith('data:image/')) {
     const name = `${key}-${Date.now().toString(36)}`
     const p = await ghPutImage(value, name)
@@ -995,7 +1037,7 @@ async function syncImageToCloud(key, value) {
 
 // 迁移：把本机 IndexedDB 里的历史图片全部推送到云端（一次操作后全端可见）
 export async function migrateCloudImages(onProgress) {
-  if (!token) return { ok: false, error: 'no-token' }
+  if (!token && !ADMIN_API_URL) return { ok: false, error: 'no-token' }
   const keys = Object.keys(imageStore).filter((k) => {
     const v = imageStore[k]
     return typeof v === 'string' && v.startsWith('data:image/')
