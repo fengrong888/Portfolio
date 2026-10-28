@@ -33,7 +33,7 @@ import {
 
 // 作品管理面板（Shift+E + 密码验证后打开）：
 // 编辑标题/类别/英文、上传封面与详情图、逐张管理详情图（删除/前后插入）、
-// 拖拽调整作品顺序、新增/删除作品（带确认）、导出完整数据发回固化部署。
+// 拖拽调整作品顺序、新增/删除作品（带确认）、导出完整数据备份。
 function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, onDirtyChange }) {
   const id = work.id
   const [open, setOpen] = useState(false)
@@ -231,7 +231,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const onDelete = () => {
     const msg = work._new
       ? `确定删除「${d.title}」？该新增作品将被移除。`
-      : `确定删除「${d.title}」？删除后本机预览立即生效；导出数据发回部署后，该作品将从网站永久移除（可通过重新提供恢复）。`
+      : `确定删除「${d.title}」？删除后点「完成（自动同步）」，该作品将在所有设备上永久移除。`
     if (window.confirm(msg)) deleteWork(id)
   }
 
@@ -418,7 +418,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
 
           {work._new && (
             <p className="ap-row__note">
-              新增作品请上传封面与详情图（本机即时预览）；导出数据发回部署后对所有人可见。
+              新增作品请上传封面与详情图，点「完成（自动同步）」后同步云端，所有设备可见。
             </p>
           )}
           <button className="ap-btn ap-btn--save" onClick={onSave}>
@@ -690,7 +690,7 @@ export default function AdminPanel() {
           ＋ 添加作品
         </button>
         <button className="ap-btn ap-btn--export" onClick={handleExport}>
-          {exported ? '✓ 已导出，文件发回即可部署' : '导出数据'}
+          {exported ? '✓ 已导出备份' : '导出数据'}
         </button>
         <button
           className="ap-btn ap-btn--reset"

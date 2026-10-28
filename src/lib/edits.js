@@ -324,7 +324,7 @@ export function useAuthorized() {
   return useSyncExternalStore(subscribeEdits, isAuthorized)
 }
 
-// ---------- 删除作品（标记 deleted，导出后部署时从作品列表移除） ----------
+// ---------- 删除作品（标记 deleted，云端同步后全设备永久移除） ----------
 export function deleteWork(id) {
   const next = { ...edits }
   Object.keys(next).forEach((k) => {
