@@ -1083,7 +1083,7 @@ export async function migrateCloudImages(onProgress) {
 
 // 图片删除的云端联动：若该项已是云端路径，删除文件并更新映射
 async function removeCloudLinked(key, value) {
-  if (!token) return
+  if (!token && !ADMIN_API_URL) return
   if (typeof value === 'string' && value.startsWith('./')) {
     try {
       await ghDeleteImage(value)
