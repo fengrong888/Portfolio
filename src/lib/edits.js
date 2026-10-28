@@ -721,8 +721,8 @@ export async function loadCloud() {
       return r.json()
     })
   const sources = [
-    // jsDelivr CDN（国内节点，带时间戳防缓存）
-    mk(`https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/docs/${CLOUD_FILE}?t=${ts}`, 5000),
+    // jsDelivr CDN（国内节点，带时间戳防缓存；CLOUD_FILE 已含 docs/ 前缀，不可重复拼 docs/）
+    mk(`https://cdn.jsdelivr.net/gh/${CLOUD_REPO}@main/${CLOUD_FILE}?t=${ts}`, 5000),
     // 站内数据文件（部署根相对路径）
     mk(`./data/portfolio-data.json?t=${ts}`, 5000),
     // raw 源兜底

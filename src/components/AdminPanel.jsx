@@ -45,7 +45,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   const shotFromRef = useRef(null) // 拖拽起始 index（事件层）
   const coverRef = useRef(null)
   const shotsRef = useRef(null)
-  const insertRef = useRef(null) // 记录待插入位置：{ index }
   const shotsListRef = useRef(null) // 详情图横排列表（左右按钮滚动）
   // 悬停纯色：从作品封面/详情图自动提取主色（缓存，每行只提取一次）
   const [tint, setTint] = useState(null)
@@ -64,14 +63,21 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
   }
   useEditsRev()
   const hasShots = !!getStoredImage(`work-${id}-shots`)
-  // 文字草稿：后台输入先改草稿，点「完成」才提交到网站
-  const [d, setD] = useState(() => ({
-    title: work.title,
-    cat: work.cat,
-    year: work.year ?? '',
-    dtitle: work.dtitle ?? work.title,
-    dcat: work.dcat ?? work.cat,
-  }))
+  // 文字草稿：后台输入先改草稿，点「完成」才提交到网站。
+  // 草稿持久化到 localStorage（pf-draft-<id>）：误刷新/误关后台不丢失，重新打开自动恢复
+  const [d, setD] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`pf-draft-${id}`) || 'null')
+      if (saved && typeof saved === 'object') return saved
+    } catch { /* ignore */ }
+    return {
+      title: work.title,
+      cat: work.cat,
+      year: work.year ?? '',
+      dtitle: work.dtitle ?? work.title,
+      dcat: work.dcat ?? work.cat,
+    }
+  })
   // 是否有未提交的文字修改（用于关闭时提醒保存）
   const dirty = !!(
     d.title !== work.title ||
@@ -84,7 +90,14 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     onDirtyChange?.(id, dirty)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [d, work, id])
-  const setDk = (k) => (e) => setD((p) => ({ ...p, [k]: e.target.value }))
+  const setDk = (k) => (e) =>
+    setD((p) => {
+      const next = { ...p, [k]: e.target.value }
+      try {
+        localStorage.setItem(`pf-draft-${id}`, JSON.stringify(next))
+      } catch { /* ignore */ }
+      return next
+    })
   const [saved, setSaved] = useState(false)
   // 提交该作品行的文字草稿（保存作品 / 点完成时都会调用）
   const commitRow = () => {
@@ -93,6 +106,10 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
     if (d.year !== (work.year ?? '')) applyEdit(`work-${id}-year`, d.year)
     if (d.dtitle !== (work.dtitle ?? work.title)) applyEdit(`work-${id}-dtitle`, d.dtitle)
     if (d.dcat !== (work.dcat ?? work.cat)) applyEdit(`work-${id}-dcat`, d.dcat)
+    // 已提交 → 清除持久化草稿
+    try {
+      localStorage.removeItem(`pf-draft-${id}`)
+    } catch { /* ignore */ }
   }
   // 监听「完成」事件统一提交草稿
   useEffect(() => {
@@ -191,8 +208,10 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
       await putImage(`work-${id}-shots`, JSON.stringify(next))
     } finally {
       setBusy(null)
+      // 清空触发本次上传的 input（历史 bug：多 label 共用 insertRef 会清错对象，
+      // 导致再次选择同一文件时 onChange 不触发、无法重复插入）
+      e.target.value = ''
     }
-    if (insertRef.current) insertRef.current.value = ''
   }
 
   // 详情图列表左右移动
@@ -285,6 +304,7 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
                 src={coverCdnFail ? coverSrc : jsdelivrUrl(coverSrc)}
                 alt="封面预览"
                 draggable={false}
+                loading="lazy"
                 onError={() => setCoverCdnFail(true)}
               />
               <div className="ap-cover-tint" style={{ background: tint || 'rgba(0,0,0,0)' }} />
@@ -345,7 +365,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
                     </button>
                     <label className="ap-shot__ins ap-shot__ins--before" title="在此图前插入多张">
                       <input
-                        ref={insertRef}
                         type="file"
                         accept="image/*"
                         multiple
@@ -356,7 +375,6 @@ function WorkRow({ work, draggable, onDragStart, onDragOver, onDrop, dragState, 
                     </label>
                     <label className="ap-shot__ins ap-shot__ins--after" title="在此图后插入多张">
                       <input
-                        ref={insertRef}
                         type="file"
                         accept="image/*"
                         multiple
