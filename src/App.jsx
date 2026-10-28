@@ -76,33 +76,30 @@ function Shell() {
 }
 
 export default function App() {
-  // 开屏动画：
-  // - 首次打开网址（新标签页首次访问）→ 先进首屏，点击后进入 hash 指向的页面
-  // - 刷新 / 从历史返回 / 再次加载 → 停留在当前页（如 #/work/3、#/about），不再回首屏
+  // 开屏动画：首次访问进入首屏；刷新 / 从历史返回时保留当前页面状态
   const [intro, setIntro] = useState(() => {
     try {
-      // 打开网站默认进入首屏（点击后进入作品页）
-      // 刷新时保持原页面：刷新前在首屏 → 回首屏；在作品页/详情页刷新 → 停在原页
       if (sessionStorage.getItem('portfolio-intro-active') === '1') return true
       if (sessionStorage.getItem('portfolio-seen') === '1') return false
-    } catch { /* 存储不可用时回退到首屏 */ }
+    } catch {
+      // 存储不可用时回退到首屏
+    }
     return true
   })
   useEffect(() => {
-    if (intro) {
-      try {
-        // 记录「当前正停留在首屏」：刷新时保留，点击进入后清除
+    try {
+      if (intro) {
         sessionStorage.setItem('portfolio-intro-active', '1')
         sessionStorage.removeItem('portfolio-seen')
-      } catch { /* ignore */ }
-    } else {
-      try {
+      } else {
         sessionStorage.removeItem('portfolio-intro-active')
-        // 记录「已进入过网站正文」：非首屏刷新时停留在原页面
         sessionStorage.setItem('portfolio-seen', '1')
-      } catch { /* ignore */ }
+      }
+    } catch {
+      // sessionStorage 可能被浏览器隐私设置禁用，不影响网站主体功能
     }
   }, [intro])
+
   // 重播开屏时递增 key，强制重新挂载组件（重置鼠标动效）
   const [introKey, setIntroKey] = useState(0)
 
@@ -118,7 +115,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!intro) return
+    if (!intro) return undefined
     const close = (e) => {
       // 点击左上角 logo（重播开屏）不关闭开屏
       if (e.target instanceof Element && e.target.closest('.nav__logo')) return
@@ -146,14 +143,13 @@ export default function App() {
   }, [intro])
 
   useEffect(() => {
-    // 加载后台上传的作品图片（IndexedDB 本地存储）
+    // 加载后台上传的作品图片（IndexedDB 本地存储）和云端同步数据
     loadStoredImages()
-    // 加载云端同步数据（GitHub 仓库数据文件），与本地编辑合并后生效
     loadCloud()
   }, [])
 
   useEffect(() => {
-    // 禁止网站内所有图片被鼠标右键下载 / 拖拽保存
+    // 阻止图片被拖拽；右键限制仅作为轻量交互，不应影响页面其他元素
     const onContext = (e) => {
       if (e.target instanceof Element && e.target.closest('img')) e.preventDefault()
     }
@@ -162,27 +158,9 @@ export default function App() {
     }
     document.addEventListener('contextmenu', onContext)
     document.addEventListener('dragstart', onDrag)
-  }, [])
-
-  useEffect(() => {
-    // 移除托管平台注入的右下角「豆包工作生成」水印容器（Shadow DOM 徽标）。
-    // 持续监视：无论宿主在哪个时机注入/重新注入都立即清除。
-    const clean = () => {
-      const root = document.getElementById('root')
-      const body = document.body
-      if (!root || !body) return
-      Array.from(body.children).forEach((el) => {
-        if (el !== root && el.shadowRoot) el.remove()
-      })
-    }
-    clean()
-    const mo = new MutationObserver(clean)
-    mo.observe(document.body, { childList: true })
-    const timer = window.setInterval(clean, 2000)
-    window.setTimeout(() => window.clearInterval(timer), 60000)
     return () => {
-      mo.disconnect()
-      window.clearInterval(timer)
+      document.removeEventListener('contextmenu', onContext)
+      document.removeEventListener('dragstart', onDrag)
     }
   }, [])
 

@@ -1,0 +1,47 @@
+name: Build check
+
+on:
+  push:
+    branches:
+      - main
+      - fix/runtime-cleanup
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build production bundle
+        run: npm run build
+      - name: Publish build to docs while preserving uploaded portfolio data
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          # Keep docs/data (user-uploaded images and cloud data) intact.
+          # Merge generated files into docs instead of deleting the folder.
+          mkdir -p docs
+          cp -a dist/. docs/
+          git add docs
+          if git diff --cached --quiet; then
+            echo "No generated site changes to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: rebuild GitHub Pages output [skip deploy]"
+            git push
+          fi

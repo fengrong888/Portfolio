@@ -105,6 +105,8 @@ export default function WorkDetail() {
   useEffect(() => {
     if (!work) return
     const onKey = (e) => {
+      const target = e.target
+      if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"]')) return
       if (e.key === 'Escape') navigate('/')
       if (e.key === 'ArrowLeft') navigate(`/work/${prev.id}`)
       if (e.key === 'ArrowRight') navigate(`/work/${next.id}`)
