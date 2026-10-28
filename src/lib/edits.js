@@ -379,7 +379,7 @@ export async function putImage(key, value) {
   listeners.forEach((l) => l())
   // 云端同步：dataURL 上传为仓库路径后全端可见（失败时保持本地，下次再试）；
   // 后台编辑中不推云端，点「完成」时由 migrateCloudImages 统一推送
-  if (token && !editing) {
+  if ((token || ADMIN_API_URL) && !editing) {
     syncImageToCloud(key, value)
       .then((next) => {
         if (next !== value) {
@@ -436,13 +436,13 @@ export async function removeImage(key) {
   }
   if (typeof removed === 'string' && removed.startsWith('./')) {
     rmCloud()
-    if (token) ghDeleteImage(removed).catch(() => {})
+    if (token || ADMIN_API_URL) ghDeleteImage(removed).catch(() => {})
   } else if (typeof removed === 'string') {
     try {
       const arr = JSON.parse(removed)
       if (Array.isArray(arr)) {
         rmCloud()
-        if (token) {
+        if (token || ADMIN_API_URL) {
           arr
             .filter((x) => typeof x === 'string' && x.startsWith('./'))
             .forEach((p) => ghDeleteImage(p).catch(() => {}))
@@ -453,7 +453,7 @@ export async function removeImage(key) {
     }
   } else if (Array.isArray(removed)) {
     rmCloud()
-    if (token) {
+    if (token || ADMIN_API_URL) {
       removed
         .filter((x) => typeof x === 'string' && x.startsWith('./'))
         .forEach((p) => ghDeleteImage(p).catch(() => {}))
@@ -461,7 +461,7 @@ export async function removeImage(key) {
   }
   invalidateWorks()
   listeners.forEach((l) => l())
-  if (token && !editing) queueSync(200)
+  if ((token || ADMIN_API_URL) && !editing) queueSync(200)
 }
 
 export async function loadStoredImages() {
