@@ -220,7 +220,7 @@ export default function WorkCard({ work, index }) {
             alt={work.title}
             loading="lazy"
             decoding="async"
-            fetchPriority={index < 12 ? 'high' : 'auto'}
+            fetchPriority={index < 4 ? 'high' : 'auto'}
             onError={() => setCdnFail(true)}
           />
         </div>
