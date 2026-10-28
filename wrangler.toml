@@ -1,0 +1,20 @@
+# Cloudflare Worker 独立部署配置（后台安全 API）
+# 入口固定为 worker/index.js —— 只部署后台 API，绝不构建/部署整个前端网站。
+name = "portfolio-admin"
+main = "worker/index.js"
+compatibility_date = "2026-10-28"
+
+# 部署到 workers.dev（可在 Cloudflare 控制台绑定自定义域名，无需改此文件）
+workers_dev = true
+
+# 普通环境变量（部署后也可在 Cloudflare 控制台 → Settings → Variables 里修改）
+# 以下为占位值，部署前必须替换为你的真实值：
+#  - CF_ACCESS_TEAM_DOMAIN：你的 Cloudflare Access Team Domain（不带 https://，例如 abc.cloudflareaccess.com）
+#  - CF_ACCESS_AUD：Cloudflare Access 应用页面上复制的 Application AUD 标签
+[vars]
+CF_ACCESS_TEAM_DOMAIN = "REPLACE_WITH_YOUR.cloudflareaccess.com"
+CF_ACCESS_AUD = "REPLACE_WITH_YOUR_AUD_TAG"
+ALLOWED_ORIGIN = "https://fengrong888.github.io"
+
+# GITHUB_TOKEN 必须作为 Secret 设置，绝不可写进本文件或提交到 Git：
+#   npx wrangler secret put GITHUB_TOKEN

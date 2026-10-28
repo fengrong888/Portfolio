@@ -108,7 +108,10 @@ function allowedPath(path) {
   if (path === JSON_FILE) return true;
   if (!path.startsWith(IMAGE_PREFIX)) return false;
   if (path.includes('..') || path.includes('\\') || path.includes('//')) return false;
-  return /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(path);
+  // 严格文件名校验：仅允许安全字符、单扩展名、≤120 字符，防路径注入与畸形文件名
+  const name = path.slice(IMAGE_PREFIX.length);
+  if (!/^[A-Za-z0-9._-]{1,120}$/.test(name)) return false;
+  return /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(name);
 }
 
 export default {
