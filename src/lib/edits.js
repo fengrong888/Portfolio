@@ -414,6 +414,8 @@ export async function moveShot(id, currentShots, from, to) {
 }
 
 export async function removeImage(key) {
+  // 先取出旧值再删除（历史 bug：先 delete 再取值会拿到 undefined，云端镜像永远删不掉）
+  const removed = imageStore[key]
   try {
     const db = await openImgDB()
     await new Promise((res, rej) => {
@@ -425,13 +427,40 @@ export async function removeImage(key) {
   } catch {
     /* ignore */
   }
-  const removed = imageStore[key]
   delete imageStore[key]
+  // 同步删除云端镜像键：避免 computeWorks 从 cloudImages 兜底导致界面不刷新。
+  // 兼容三种存储格式：单路径字符串 / JSON 字符串数组 / 原生数组。
+  const rmCloud = () => {
+    delete cloudImages[key]
+  }
+  if (typeof removed === 'string' && removed.startsWith('./')) {
+    rmCloud()
+    if (token) ghDeleteImage(removed).catch(() => {})
+  } else if (typeof removed === 'string') {
+    try {
+      const arr = JSON.parse(removed)
+      if (Array.isArray(arr)) {
+        rmCloud()
+        if (token) {
+          arr
+            .filter((x) => typeof x === 'string' && x.startsWith('./'))
+            .forEach((p) => ghDeleteImage(p).catch(() => {}))
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  } else if (Array.isArray(removed)) {
+    rmCloud()
+    if (token) {
+      removed
+        .filter((x) => typeof x === 'string' && x.startsWith('./'))
+        .forEach((p) => ghDeleteImage(p).catch(() => {}))
+    }
+  }
   invalidateWorks()
   listeners.forEach((l) => l())
-  removeCloudLinked(key, removed).then(() => {
-    if (token && !editing) queueSync(200)
-  })
+  if (token && !editing) queueSync(200)
 }
 
 export async function loadStoredImages() {
