@@ -792,7 +792,7 @@ async function ghFetch(path, init) {
   // Legacy mode checks PAT validity; Worker mode reports Access/session errors without prompting for a browser PAT.
   if (res.status === 401 || res.status === 403) {
     if (workerMode) {
-      syncError = '后台身份验证失败，请重新登录（Cloudflare Access 或后台密码）'
+      syncError = '后台登录已失效，请重新登录（Shift+E 输入后台密码）'
       notifyCloud()
       window.dispatchEvent(new CustomEvent('admin-auth-expired'))
     } else markTokenExpired()
@@ -968,6 +968,13 @@ export async function syncNow() {
 async function doSyncNow() {
   if (!token && !ADMIN_API_URL) return { ok: false, error: 'no-token' }
   if (syncing) return { ok: false, error: 'busy' }
+  // Worker 模式下保存前必须持有有效会话，否则直接引导重新登录，避免发出一条必然 401 的请求
+  if (ADMIN_API_URL && !getAdminSession()) {
+    syncError = '尚未登录后台，请按 Shift+E 输入密码后再保存'
+    notifyCloud()
+    window.dispatchEvent(new CustomEvent('admin-auth-expired'))
+    return { ok: false, error: syncError }
+  }
   syncing = true
   syncError = ''
   notifyCloud()
@@ -1037,7 +1044,12 @@ async function ghPutJson(merged, imgs, retried = false) {
     return ghPutJson(merged, imgs, true)
   }
   if (!res.ok) {
-    throw new Error(`PUT ${res.status} ${(await res.text()).slice(0, 120)}`)
+    const body = (await res.text()).slice(0, 120)
+    if (res.status === 401 || res.status === 403) {
+      window.dispatchEvent(new CustomEvent('admin-auth-expired'))
+      throw new Error('后台登录已失效，请重新登录（Shift+E 输入后台密码）')
+    }
+    throw new Error(`PUT ${res.status} ${body}`)
   }
   return res
 }
@@ -1055,7 +1067,13 @@ async function ghPutImage(dataUrl, name) {
       content: m[2],
     }),
   })
-  if (!res.ok) throw new Error(`IMG PUT ${res.status}`)
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      window.dispatchEvent(new CustomEvent('admin-auth-expired'))
+      throw new Error('后台登录已失效，请重新登录（Shift+E 输入后台密码）')
+    }
+    throw new Error(`IMG PUT ${res.status}`)
+  }
   // GitHub Pages 部署根为 docs/，线上访问需去掉 docs/ 前缀
   return `./data/imgs/${name}.${ext}`
 }
@@ -1070,7 +1088,13 @@ async function ghDeleteImage(relPath) {
     method: 'DELETE',
     body: JSON.stringify({ message: `remove img ${path}`, sha: j.sha }),
   })
-  if (!res.ok) throw new Error(`IMG DEL ${res.status}`)
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      window.dispatchEvent(new CustomEvent('admin-auth-expired'))
+      throw new Error('后台登录已失效，请重新登录（Shift+E 输入后台密码）')
+    }
+    throw new Error(`IMG DEL ${res.status}`)
+  }
 }
 
 // 图片上传后的云端同步：dataURL -> 上传 -> 就地替换为路径
