@@ -17,6 +17,23 @@ export default defineConfig({
           .replace(/https:\/\/fonts\.gstatic\.com/g, 'https://miaoda.feishu.cn')
       },
     },
+    {
+      // 主资源 CDN 化：JS/CSS 走 jsDelivr 国内节点（国内首次加载提速），
+      // 加载失败自动回退 GitHub Pages 原站（onerror 双保险），
+      // 构建 hash 每次变化 → 新 CDN URL → 无缓存陈旧问题。
+      name: 'cdn-assets',
+      transformIndexHtml(html) {
+        return html
+          .replace(
+            /(<script[^>]*src=")\.\/(assets\/[^"]+\.js)(")/g,
+            `$1https://cdn.jsdelivr.net/gh/fengrong888/Portfolio@main/docs/$2" onerror="this.onerror=null;var s=document.createElement('script');s.type='module';s.src='./$2';document.head.appendChild(s)$3`
+          )
+          .replace(
+            /(<link[^>]*href=")\.\/(assets\/[^"]+\.css)(")/g,
+            `$1https://cdn.jsdelivr.net/gh/fengrong888/Portfolio@main/docs/$2" onerror="this.onerror=null;var l=document.createElement('link');l.rel='stylesheet';l.href='./$2';document.head.appendChild(l)$3`
+          )
+      },
+    },
   ],
   base: './',
   build: {

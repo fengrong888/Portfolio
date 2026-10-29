@@ -16,6 +16,43 @@
           }
         } catch (e) {}
       })()
+      // 主资源 CDN 挂起保护：JS/CSS 走 jsDelivr 国内节点加速；
+      // 若 CDN 请求挂起（不报错也不返回）且应用 6 秒内未启动，
+      // 自动把资源改回 GitHub Pages 原站重新加载，杜绝白屏。
+      ;(function () {
+        try {
+          var t0 = Date.now()
+          var iv = setInterval(function () {
+            if (window.__PF_BOOT__) {
+              clearInterval(iv)
+              return
+            }
+            if (Date.now() - t0 > 6000) {
+              clearInterval(iv)
+              var re = /https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^@]+@[^/]+\/docs\//
+              var s = document.querySelector('script[type="module"]')
+              if (s && s.src.indexOf('cdn.jsdelivr.net') >= 0) {
+                var originSrc = s.src.replace(re, './')
+                s.onerror = null
+                s.remove()
+                var s2 = document.createElement('script')
+                s2.type = 'module'
+                s2.src = originSrc
+                document.head.appendChild(s2)
+              }
+              var l = document.querySelector('link[rel="stylesheet"][href*="cdn.jsdelivr.net"]')
+              if (l) {
+                var originHref = l.href.replace(re, './')
+                l.remove()
+                var l2 = document.createElement('link')
+                l2.rel = 'stylesheet'
+                l2.href = originHref
+                document.head.appendChild(l2)
+              }
+            }
+          }, 500)
+        } catch (e) {}
+      })()
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fengrong-Portfolio</title>
