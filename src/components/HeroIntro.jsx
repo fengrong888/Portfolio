@@ -23,10 +23,10 @@ export default function HeroIntro({ onDone }) {
       lastIdx = idx
       return covers[idx]
     }
-    // 只预热少量封面（CDN 化），避免开屏时一次性下载多张作品图；其余封面在实际生成时再解码。
+    // 只预热首批封面（CDN 化），避免开屏时一次性下载全部作品图；其余封面在实际生成时再解码。
     // 已预热图片可直接复用，未预热图片也会在 decode 完成后正常浮现。
     const ready = new Map()
-    covers.slice(0, 4).forEach((src) => {
+    covers.slice(0, 8).forEach((src) => {
       const im = new Image()
       im.decoding = 'async'
       im.src = src
