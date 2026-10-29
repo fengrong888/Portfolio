@@ -9,7 +9,7 @@ export default function EditBar() {
   const authorized = useAuthorized()
   const [askPw, setAskPw] = useState(false)
   const [pw, setPw] = useState('')
-  const [wrong, setWrong] = useState(false)
+  const [errMsg, setErrMsg] = useState('')
 
   // 服务端会话失效（401）：关闭后台并清除授权，下次 Shift+E 重新验证
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function EditBar() {
           } else {
             setAskPw(true)
             setPw('')
-            setWrong(false)
+            setErrMsg('')
           }
         } else if (authorized) {
           setEditing(true)
@@ -61,13 +61,17 @@ export default function EditBar() {
       // 通知云端状态区立即重检（覆盖首次进入的时序竞态）
       window.dispatchEvent(new CustomEvent('admin-logged-in'))
     } else if (r === 'not-enabled') {
-      setWrong(true)
+      setErrMsg('')
       setPw('')
       setAskPw(false)
       // 服务端未启用密码登录：引导使用 Cloudflare Access
       window.alert('服务端尚未启用密码登录。请先配置 Cloudflare Access 登录，或联系部署方设置 ADMIN_PASSWORD。')
+    } else if (r === 'network') {
+      // 网络连不上安全服务器：与密码错误严格区分，避免误导
+      setErrMsg('连不上安全服务器，请检查网络后重试')
+      setPw('')
     } else {
-      setWrong(true)
+      setErrMsg('密码不正确，请重试')
       setPw('')
     }
   }
@@ -91,14 +95,14 @@ export default function EditBar() {
               placeholder="后台密码"
               onChange={(e) => {
                 setPw(e.target.value)
-                setWrong(false)
+                setErrMsg('')
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') submit()
                 if (e.key === 'Escape') setAskPw(false)
               }}
             />
-            {wrong && <em className="ap-pw__err">密码不正确，请重试</em>}
+            {errMsg && <em className="ap-pw__err">{errMsg}</em>}
             <div className="ap-pw__btns">
               <button onClick={() => setAskPw(false)}>取消</button>
               <button className="ap-pw__ok" onClick={submit}>

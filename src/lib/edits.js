@@ -338,29 +338,31 @@ export function clearAdminAuth() {
 // 返回：true=通过；'not-enabled'=服务端未启用密码登录；false=密码错误/网络失败。
 export async function checkPassword(pw) {
   if (isAdminWorkerConfigured()) {
+    let r
     try {
-      const r = await fetch(`${ADMIN_API_URL.replace(/\/+$/, '')}/api/auth`, {
+      r = await fetch(`${ADMIN_API_URL.replace(/\/+$/, '')}/api/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pw }),
       })
-      if (r.ok) {
-        const j = await r.json().catch(() => ({}))
-        if (j && typeof j.session === 'string' && j.session) setAdminSession(j.session)
-        authorized = true
-        try {
-          sessionStorage.setItem('portfolio-admin-ok', '1')
-        } catch {
-          /* ignore */
-        }
-        listeners.forEach((l) => l())
-        return true
-      }
-      if (r.status === 503) return 'not-enabled'
-      return false
     } catch {
-      return false
+      // 网络失败/超时：与密码错误严格区分，避免误导
+      return 'network'
     }
+    if (r.ok) {
+      const j = await r.json().catch(() => ({}))
+      if (j && typeof j.session === 'string' && j.session) setAdminSession(j.session)
+      authorized = true
+      try {
+        sessionStorage.setItem('portfolio-admin-ok', '1')
+      } catch {
+        /* ignore */
+      }
+      listeners.forEach((l) => l())
+      return true
+    }
+    if (r.status === 503) return 'not-enabled'
+    return 'wrong-password'
   }
   // 未配置 Worker：直接授权（前端无明文密码可验，安全边界由云端 API 承担）
   authorized = true
