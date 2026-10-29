@@ -8,12 +8,11 @@ compatibility_date = "2026-10-28"
 workers_dev = true
 
 # 普通环境变量（部署后也可在 Cloudflare 控制台 → Settings → Variables 里修改）
-# 以下为占位值，部署前必须替换为你的真实值：
-#  - CF_ACCESS_TEAM_DOMAIN：你的 Cloudflare Access Team Domain（不带 https://，例如 abc.cloudflareaccess.com）
-#  - CF_ACCESS_AUD：Cloudflare Access 应用页面上复制的 Application AUD 标签
+# 初始部署不设置 Access 变量：接入 Cloudflare Access 前，后台由 ADMIN_PASSWORD 密码会话保护；
+# 接入 Access 后，再在此添加（或控制台添加）：
+#   CF_ACCESS_TEAM_DOMAIN = "你的 Team Domain（不带 https://）"
+#   CF_ACCESS_AUD = "Access 应用 AUD 标签"
 [vars]
-CF_ACCESS_TEAM_DOMAIN = "REPLACE_WITH_YOUR.cloudflareaccess.com"
-CF_ACCESS_AUD = "REPLACE_WITH_YOUR_AUD_TAG"
 ALLOWED_ORIGIN = "https://fengrong888.github.io"
 
 # GITHUB_TOKEN 必须作为 Secret 设置，绝不可写进本文件或提交到 Git：

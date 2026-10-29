@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { setEditing, useEditing, useAuthorized, checkPassword, isAdminWorkerConfigured } from '../lib/edits'
+import { setEditing, useEditing, useAuthorized, checkPassword, isAdminWorkerConfigured, clearAdminAuth } from '../lib/edits'
 
 // 后台入口：Shift+E 唤起。workerMode 下输入后台密码（密码由服务端校验，前端无明文）；
 // 未配置 Worker（旧 PAT 过渡期）仅确认框防误入。
@@ -10,6 +10,17 @@ export default function EditBar() {
   const [askPw, setAskPw] = useState(false)
   const [pw, setPw] = useState('')
   const [wrong, setWrong] = useState(false)
+
+  // 服务端会话失效（401）：关闭后台并清除授权，下次 Shift+E 重新验证
+  useEffect(() => {
+    const onExpired = () => {
+      clearAdminAuth()
+      setEditing(false)
+      setAskPw(false)
+    }
+    window.addEventListener('admin-auth-expired', onExpired)
+    return () => window.removeEventListener('admin-auth-expired', onExpired)
+  }, [])
 
   useEffect(() => {
     const onKey = (e) => {

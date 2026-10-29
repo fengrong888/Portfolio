@@ -178,10 +178,48 @@ async function handleAuth(request, env, cors) {
     return response(JSON.stringify({ error: 'Bad request' }), 400, cors);
   }
   if (timingSafeEqual(pw, env.ADMIN_PASSWORD)) {
-    return response(JSON.stringify({ ok: true }), 200, cors);
+    // 签发 30 天会话令牌（HMAC 签名；密钥由两个 Secret 派生，浏览器拿到的只是令牌本身）
+    const exp = Math.floor(Date.now() / 1000) + 30 * 24 * 3600;
+    const payload = btoa(JSON.stringify({ exp })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const sig = await hmacHex(`${payload}.${exp}`, sessionKey(env));
+    return response(JSON.stringify({ ok: true, session: `${payload}.${sig}` }), 200, cors);
   }
   recordFail(ip);
   return response(JSON.stringify({ error: 'Wrong password' }), 401, cors);
+}
+
+// 会话密钥：由 ADMIN_PASSWORD + GITHUB_TOKEN 两个 Secret 派生，不在请求/响应中出现
+function sessionKey(env) {
+  return `${env.ADMIN_PASSWORD || ''}::${env.GITHUB_TOKEN || ''}`;
+}
+
+async function hmacHex(data, key) {
+  const k = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(key),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const s = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(data));
+  return [...new Uint8Array(s)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 校验 X-Admin-Session 令牌（密码登录签发的会话）
+async function verifySession(request, env) {
+  const tok = request.headers.get('X-Admin-Session');
+  if (!tok || typeof tok !== 'string') return false;
+  const m = tok.match(/^([A-Za-z0-9_-]+)\.([a-f0-9]{64})$/);
+  if (!m) return false;
+  let payload;
+  try {
+    payload = JSON.parse(atob(m[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch {
+    return false;
+  }
+  if (typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now()) return false;
+  const sig = await hmacHex(`${m[1]}.${payload.exp}`, sessionKey(env));
+  return timingSafeEqual(sig, m[2]);
 }
 
 export default {
@@ -210,7 +248,10 @@ export default {
     if (!['GET', 'PUT', 'DELETE'].includes(request.method)) {
       return response(JSON.stringify({ error: 'Method not allowed' }), 405, { ...cors, Allow: 'GET, PUT, DELETE, OPTIONS' });
     }
-    if (!await verifyAccessJwt(request, env)) {
+    // 鉴权：Cloudflare Access JWT 或密码登录签发的会话令牌，二者任一有效即放行。
+    // 未配置 Access 环境变量时（接入前），仅密码会话生效。
+    const authed = (await verifyAccessJwt(request, env)) || (await verifySession(request, env));
+    if (!authed) {
       return response(JSON.stringify({ error: 'Unauthorized' }), 401, cors);
     }
     if (!env.GITHUB_TOKEN) {

@@ -306,18 +306,47 @@ try {
   authorized = false
 }
 export const isAuthorized = () => authorized
+const SESSION_KEY = 'pf-admin-session'
+export const getAdminSession = () => {
+  try {
+    return sessionStorage.getItem(SESSION_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+function setAdminSession(s) {
+  try {
+    if (s) sessionStorage.setItem(SESSION_KEY, s)
+    else sessionStorage.removeItem(SESSION_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+// 会话失效/登出：清除本地授权与会话（下次 Shift+E 需重新输密码）
+export function clearAdminAuth() {
+  authorized = false
+  setAdminSession('')
+  try {
+    sessionStorage.removeItem('portfolio-admin-ok')
+  } catch {
+    /* ignore */
+  }
+  listeners.forEach((l) => l())
+}
 // 打开后台的验证：workerMode 下把密码发给 Worker /api/auth 由服务端比对；
 // 未配置 Worker（旧 PAT 过渡期）不校验密码，仅由 EditBar 的确认框防误入。
 // 返回：true=通过；'not-enabled'=服务端未启用密码登录；false=密码错误/网络失败。
 export async function checkPassword(pw) {
   if (isAdminWorkerConfigured()) {
     try {
-      const r = await fetch(`${ADMIN_API_URL}/api/auth`, {
+      const r = await fetch(`${ADMIN_API_URL.replace(/\/+$/, '')}/api/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pw }),
       })
       if (r.ok) {
+        const j = await r.json().catch(() => ({}))
+        if (j && typeof j.session === 'string' && j.session) setAdminSession(j.session)
         authorized = true
         try {
           sessionStorage.setItem('portfolio-admin-ok', '1')
@@ -638,13 +667,34 @@ function markTokenExpired() {
 export async function checkTokenValidity() {
   if (ADMIN_API_URL) {
     try {
-      const res = await fetchTimeout(adminApiURL(CLOUD_FILE), { credentials: 'include', headers: { Accept: 'application/vnd.github+json' } }, 8000)
-      syncError = res.ok ? '' : (res.status === 401 || res.status === 403 ? 'Cloudflare Access 身份验证失败，请先登录' : `云端连接失败：HTTP ${res.status}`)
+      const session = getAdminSession()
+      const res = await fetchTimeout(
+        adminApiURL(CLOUD_FILE),
+        {
+          credentials: 'include',
+          headers: { Accept: 'application/vnd.github+json', ...(session ? { 'X-Admin-Session': session } : {}) },
+        },
+        8000
+      )
+      if (res.ok) {
+        syncError = ''
+        tokenExpired = false
+        notifyCloud()
+        return { ok: true, expired: false }
+      }
+      if (res.status === 401 || res.status === 403) {
+        syncError = '后台身份验证失败，请重新登录（Cloudflare Access 或后台密码）'
+        tokenExpired = false
+        notifyCloud()
+        window.dispatchEvent(new CustomEvent('admin-auth-expired'))
+        return { ok: false, expired: false }
+      }
+      syncError = `云端连接失败：HTTP ${res.status}`
       tokenExpired = false
       notifyCloud()
-      return { ok: res.ok, expired: false }
+      return { ok: false, expired: false }
     } catch {
-      syncError = '无法连接安全后台接口，请检查 Cloudflare Access 登录状态与网络'
+      syncError = '无法连接安全后台接口，请检查网络'
       tokenExpired = false
       notifyCloud()
       return { ok: false, expired: false }
@@ -708,20 +758,23 @@ function adminApiURL(path) {
 }
 async function ghFetch(path, init) {
   const workerMode = !!ADMIN_API_URL
+  const session = workerMode ? getAdminSession() : ''
   const res = await fetchTimeout(workerMode ? adminApiURL(path) : cloudURL(path), {
     ...init,
     ...(workerMode ? { credentials: 'include' } : {}),
     headers: {
       Accept: 'application/vnd.github+json',
       ...(!workerMode && token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(workerMode && session ? { 'X-Admin-Session': session } : {}),
       ...(init?.headers || {}),
     },
   }, 8000)
-  // Legacy mode checks PAT validity; Worker mode reports Access errors without prompting for a browser PAT.
+  // Legacy mode checks PAT validity; Worker mode reports Access/session errors without prompting for a browser PAT.
   if (res.status === 401 || res.status === 403) {
     if (workerMode) {
-      syncError = 'Cloudflare Access 身份验证失败，请先登录'
+      syncError = '后台身份验证失败，请重新登录（Cloudflare Access 或后台密码）'
       notifyCloud()
+      window.dispatchEvent(new CustomEvent('admin-auth-expired'))
     } else markTokenExpired()
   }
   return res
