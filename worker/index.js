@@ -205,11 +205,13 @@ async function hmacHex(data, key) {
   return [...new Uint8Array(s)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// 校验会话令牌（密码登录签发）。令牌经 X-Admin-Session 头或请求体 body.session 传递——
-// 注意：请求头 X-Admin-Session 会被 Cloudflare WAF 的"管理员访问"托管规则拦截（403），
-// 因此前端一律改走请求体传递，头部仅作兼容。
+// 校验会话令牌（密码登录签发）。令牌经请求体 body.pf 传递——
+// 注意：字段名不能用 "session"（Cloudflare WAF 的 "administrative rules" 托管规则
+// 会拦截含 session 的请求头/字段，返回 403），也不能用 X-Admin-* 请求头；
+// body.session 与 X-Admin-Session 头仅作旧版本兼容。
 async function verifySession(request, env, body) {
   let tok = request.headers.get('X-Admin-Session');
+  if (!tok && body && typeof body.pf === 'string') tok = body.pf;
   if (!tok && body && typeof body.session === 'string') tok = body.session;
   if (!tok || typeof tok !== 'string') return false;
   const m = tok.match(/^([A-Za-z0-9_-]+)\.([a-f0-9]{64})$/);

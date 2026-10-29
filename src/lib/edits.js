@@ -677,7 +677,7 @@ export async function checkTokenValidity() {
             Accept: 'application/vnd.github+json',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ path: CLOUD_FILE, ...(session ? { session } : {}) }),
+          body: JSON.stringify({ path: CLOUD_FILE, ...(session ? { pf: session } : {}) }),
         },
         8000
       )
@@ -765,11 +765,12 @@ async function ghFetch(path, init) {
   let url = workerMode ? adminApiURL() : cloudURL(path)
   let opts = init || {}
   if (workerMode) {
-    // 路径与会话令牌都放进请求体（Cloudflare WAF 会拦截 query 路径穿越模式与
-    // X-Admin-* 请求头，均返回 "administrative rules" 403），不再使用自定义请求头；
-    // 读（无 body）→ POST {path, session}；写（原 PUT）→ POST {path, session, message, content, sha}；
-    // 删图 → DELETE {path, session, message, sha}
-    let payload = { path, ...(session ? { session } : {}) }
+    // 路径与会话令牌都放进请求体（Cloudflare WAF 会拦截 query 路径穿越模式、
+    // X-Admin-* 请求头、以及字段名为 session 的认证字段，均返回 "administrative rules" 403），
+    // 会话字段统一命名为 pf，不再使用自定义请求头；
+    // 读（无 body）→ POST {path, pf}；写（原 PUT）→ POST {path, pf, message, content, sha}；
+    // 删图 → DELETE {path, pf, message, sha}
+    let payload = { path, ...(session ? { pf: session } : {}) }
     if (init && init.body) {
       try {
         payload = { ...payload, ...JSON.parse(init.body) }
