@@ -26,17 +26,28 @@ export default function HeroIntro({ onDone }) {
     // 只预热首批封面（CDN 化），避免开屏时一次性下载全部作品图；其余封面在实际生成时再解码。
     // 已预热图片可直接复用，未预热图片也会在 decode 完成后正常浮现。
     const ready = new Map()
-    covers.slice(0, 8).forEach((src) => {
-      const im = new Image()
-      im.decoding = 'async'
-      im.src = src
-      im.decode().catch(() => {})
-      ready.set(src, im)
-    })
+    let preloadIdle = null
 
     const rand = (min, max) => min + Math.random() * (max - min)
     const active = []
     const timers = new Set()
+    // 8 张封面预加载延后到浏览器空闲/开屏动画后进行：保持数量，错峰下载，不抢占首屏带宽
+    const preload = () => {
+      if (preloadIdle === null) return
+      preloadIdle = null
+      covers.slice(0, 8).forEach((src) => {
+        const im = new Image()
+        im.decoding = 'async'
+        im.src = src
+        im.decode().catch(() => {})
+        ready.set(src, im)
+      })
+    }
+    if (typeof requestIdleCallback === 'function') {
+      preloadIdle = requestIdleCallback(preload, { timeout: 4000 })
+    } else {
+      preloadIdle = window.setTimeout(preload, 2000)
+    }
     const schedule = (fn, delay) => {
       const id = window.setTimeout(() => {
         timers.delete(id)
@@ -150,6 +161,11 @@ export default function HeroIntro({ onDone }) {
     return () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('touchmove', onTouch)
+      if (preloadIdle !== null) {
+        if (typeof cancelIdleCallback === 'function') cancelIdleCallback(preloadIdle)
+        else window.clearTimeout(preloadIdle)
+        preloadIdle = null
+      }
       timers.forEach((id) => window.clearTimeout(id))
       timers.clear()
       active.forEach((a) => {
