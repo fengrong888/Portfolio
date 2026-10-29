@@ -4,11 +4,13 @@
  * Protect this Worker with Cloudflare Access AND keep the JWT verification below enabled.
  * Required Worker secrets/vars:
  *   GITHUB_TOKEN (secret): fine-grained PAT scoped to fengrong888/Portfolio, Contents read/write
+ *   ADMIN_PASSWORD (secret, optional): admin UI login password, verified server-side by POST /api/auth
  *   CF_ACCESS_TEAM_DOMAIN (var): e.g. your-team.cloudflareaccess.com (no https://)
  *   CF_ACCESS_AUD (var): Access application's AUD tag
  *   ALLOWED_ORIGIN (var): https://fengrong888.github.io
  *
- * Never expose GITHUB_TOKEN to the browser.
+ * Never expose GITHUB_TOKEN to the browser. If ADMIN_PASSWORD is not set,
+ * /api/auth returns 503 (Access can then be the only admin gate).
  */
 const REPO = 'fengrong888/Portfolio';
 const API = `https://api.github.com/repos/${REPO}/contents/`;
@@ -35,7 +37,7 @@ function corsHeaders(origin, env) {
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '600',
     'Vary': 'Origin',
@@ -114,6 +116,74 @@ function allowedPath(path) {
   return /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(name);
 }
 
+// ---------- /api/auth：服务端密码校验（密码仅存 Secret，绝不下发前端） ----------
+// 限流：按 CF-Connecting-IP 滑窗 5 分钟，失败 ≥8 次拒绝 5 分钟，防暴力破解。
+const authFails = new Map();
+const AUTH_WINDOW_MS = 5 * 60 * 1000;
+const AUTH_MAX_FAILS = 8;
+
+function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+function tooManyFails(ip) {
+  const now = Date.now();
+  const rec = authFails.get(ip);
+  if (!rec || now - rec.t > AUTH_WINDOW_MS) return false;
+  return rec.n >= AUTH_MAX_FAILS;
+}
+
+function recordFail(ip) {
+  const now = Date.now();
+  const rec = authFails.get(ip);
+  if (!rec || now - rec.t > AUTH_WINDOW_MS) authFails.set(ip, { n: 1, t: now });
+  else {
+    rec.n += 1;
+    rec.t = now;
+  }
+  // 防止 Map 无限增长：超过 10k 条时清理过期项
+  if (authFails.size > 10000) {
+    for (const [k, v] of authFails) {
+      if (now - v.t > AUTH_WINDOW_MS) authFails.delete(k);
+    }
+  }
+}
+
+async function handleAuth(request, env, cors) {
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (request.method === 'GET') {
+    // 探测端点：告知前端是否启用密码登录（不泄露任何秘密）
+    return response(JSON.stringify({ enabled: !!env.ADMIN_PASSWORD }), 200, cors);
+  }
+  if (request.method !== 'POST') {
+    return response(JSON.stringify({ error: 'Method not allowed' }), 405, { ...cors, Allow: 'GET, POST, OPTIONS' });
+  }
+  if (!env.ADMIN_PASSWORD) {
+    return response(JSON.stringify({ error: 'Password login is not enabled' }), 503, cors);
+  }
+  if (tooManyFails(ip)) {
+    return response(JSON.stringify({ error: 'Too many attempts, try again later' }), 429, cors);
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return response(JSON.stringify({ error: 'Invalid JSON body' }), 400, cors);
+  }
+  const pw = body && typeof body.password === 'string' ? body.password : '';
+  if (pw.length > 128) {
+    return response(JSON.stringify({ error: 'Bad request' }), 400, cors);
+  }
+  if (timingSafeEqual(pw, env.ADMIN_PASSWORD)) {
+    return response(JSON.stringify({ ok: true }), 200, cors);
+  }
+  recordFail(ip);
+  return response(JSON.stringify({ error: 'Wrong password' }), 401, cors);
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
@@ -128,6 +198,11 @@ export default {
     }
     if (!cors['Access-Control-Allow-Origin']) {
       return response(JSON.stringify({ error: 'Origin not allowed' }), 403);
+    }
+    // 密码登录端点：在 Access JWT 校验之前放行（Access 应用应排除 /api/auth 路径，
+    // 或将其作为 Access 之外的独立登录入口；若 Access 覆盖了该路径，则只能走 Access 登录）
+    if (url.pathname === '/api/auth') {
+      return handleAuth(request, env, cors);
     }
     if (url.pathname !== '/api/contents') {
       return response(JSON.stringify({ error: 'Not found' }), 404, cors);
