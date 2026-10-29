@@ -247,6 +247,18 @@ export default {
     if (url.pathname === '/api/auth') {
       return handleAuth(request, env, cors);
     }
+    // 诊断端点：仅回传是否配置 Secret（不泄露任何密钥值），用于排查部署/鉴权问题
+    if (url.pathname === '/api/diag') {
+      return response(
+        JSON.stringify({
+          ok: true,
+          passwordConfigured: !!env.ADMIN_PASSWORD,
+          tokenConfigured: !!env.GITHUB_TOKEN,
+        }),
+        200,
+        cors,
+      );
+    }
     if (url.pathname !== '/api/contents') {
       return response(JSON.stringify({ error: 'Not found' }), 404, cors);
     }
@@ -273,7 +285,19 @@ export default {
     // 未配置 Access 环境变量时（接入前），仅密码会话生效。
     const authed = (await verifyAccessJwt(request, env)) || (await verifySession(request, env, body));
     if (!authed) {
-      return response(JSON.stringify({ error: 'Unauthorized' }), 401, cors);
+      // 诊断信息（不敏感）：是否收到会话字段、两端点配置状态，便于定位 401 来源
+      return response(
+        JSON.stringify({
+          error: 'Unauthorized',
+          reason: 'no-valid-session',
+          gotPf: !!(body && typeof body.pf === 'string' && body.pf.length > 0),
+          gotSession: !!(body && typeof body.session === 'string' && body.session.length > 0),
+          passwordConfigured: !!env.ADMIN_PASSWORD,
+          tokenConfigured: !!env.GITHUB_TOKEN,
+        }),
+        401,
+        cors,
+      );
     }
     if (!env.GITHUB_TOKEN) {
       return response(JSON.stringify({ error: 'Server is not configured' }), 503, cors);
