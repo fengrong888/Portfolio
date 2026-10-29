@@ -77,6 +77,15 @@ After the new path is confirmed working on all devices, revoke the old PAT that 
 - `GET /api/contents?path=docs/data/portfolio-data.json`
 - `PUT /api/contents?path=docs/data/portfolio-data.json` with GitHub Contents API JSON payload
 - `GET/PUT/DELETE /api/contents?path=docs/data/imgs/<filename>.<extension>`
+- `GET  /api/auth` — probe: returns `{"enabled": true|false}` (whether password login is on)
+- `POST /api/auth` — body `{"password":"..."}`: server-side admin password check against the
+  `ADMIN_PASSWORD` secret. Returns `200 {"ok":true}` on match, `401` on wrong password,
+  `429` after ≥8 failed attempts per IP within 5 minutes, `503` when the secret is not set.
+
+The password is **never sent to the browser**; it exists only as a Worker secret. When
+`ADMIN_PASSWORD` is not set, admin access must go through Cloudflare Access instead.
+If you protect the whole Worker hostname with Access, either exclude the `/api/auth`
+path in the Access application settings, or drop the password flow and rely on Access only.
 
 The Worker rejects all other repository paths and methods. Configure Cloudflare rate limiting for this route as an additional defense. Do not expose the Worker token or disable Access/JWT verification.
 

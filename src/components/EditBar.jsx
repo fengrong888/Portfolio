@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { setEditing, useEditing, useAuthorized, checkPassword, isAdminWorkerConfigured } from '../lib/edits'
 
-// 后台入口：Shift+E 唤起。需要输入后台密码，避免访客进入管理面板。
+// 后台入口：Shift+E 唤起。workerMode 下输入后台密码（密码由服务端校验，前端无明文）；
+// 未配置 Worker（旧 PAT 过渡期）仅确认框防误入。
 // 同一浏览器会话内验证通过后免重复输入（关闭标签页失效）。
 export default function EditBar() {
   const editing = useEditing()
@@ -18,12 +19,17 @@ export default function EditBar() {
           setEditing(false)
           return
         }
-        if (isAdminWorkerConfigured() || authorized) {
+        if (authorized) {
           setEditing(true)
-        } else {
+        } else if (isAdminWorkerConfigured()) {
           setAskPw(true)
           setPw('')
           setWrong(false)
+        } else {
+          // 未配置 Worker（旧 PAT 过渡期）：前端无明文密码，仅确认框防误入
+          if (window.confirm('进入后台管理？\n\n（服务端密码尚未启用，此确认仅防止误入）')) {
+            setEditing(true)
+          }
         }
       }
     }
@@ -31,10 +37,17 @@ export default function EditBar() {
     return () => window.removeEventListener('keydown', onKey)
   }, [editing, authorized])
 
-  const submit = () => {
-    if (checkPassword(pw)) {
+  const submit = async () => {
+    const r = await checkPassword(pw)
+    if (r === true) {
       setAskPw(false)
       setEditing(true)
+    } else if (r === 'not-enabled') {
+      setWrong(true)
+      setPw('')
+      setAskPw(false)
+      // 服务端未启用密码登录：引导使用 Cloudflare Access
+      window.alert('服务端尚未启用密码登录。请先配置 Cloudflare Access 登录，或联系部署方设置 ADMIN_PASSWORD。')
     } else {
       setWrong(true)
       setPw('')

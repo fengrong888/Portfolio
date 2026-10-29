@@ -297,9 +297,8 @@ export function useWorks() {
   return useSyncExternalStore(subscribeEdits, buildWorks)
 }
 
-// ---------- 权限：后台入口密码（轻量防误入，非强安全） ----------
-// 如需修改密码，把下方字符串发给我即可更新并部署。
-const ADMIN_PASSWORD = '120589'
+// ---------- 权限：后台入口（workerMode=服务端密码校验；未配置时仅防误入） ----------
+// 密码只存在于 Cloudflare Worker Secret（ADMIN_PASSWORD），前端源码不再保存任何明文密码。
 let authorized = false
 try {
   authorized = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('portfolio-admin-ok') === '1'
@@ -307,18 +306,42 @@ try {
   authorized = false
 }
 export const isAuthorized = () => authorized
-export function checkPassword(pw) {
-  if (pw === ADMIN_PASSWORD) {
-    authorized = true
+// 打开后台的验证：workerMode 下把密码发给 Worker /api/auth 由服务端比对；
+// 未配置 Worker（旧 PAT 过渡期）不校验密码，仅由 EditBar 的确认框防误入。
+// 返回：true=通过；'not-enabled'=服务端未启用密码登录；false=密码错误/网络失败。
+export async function checkPassword(pw) {
+  if (isAdminWorkerConfigured()) {
     try {
-      sessionStorage.setItem('portfolio-admin-ok', '1')
+      const r = await fetch(`${ADMIN_API_URL}/api/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      })
+      if (r.ok) {
+        authorized = true
+        try {
+          sessionStorage.setItem('portfolio-admin-ok', '1')
+        } catch {
+          /* ignore */
+        }
+        listeners.forEach((l) => l())
+        return true
+      }
+      if (r.status === 503) return 'not-enabled'
+      return false
     } catch {
-      /* ignore */
+      return false
     }
-    listeners.forEach((l) => l())
-    return true
   }
-  return false
+  // 未配置 Worker：直接授权（前端无明文密码可验，安全边界由云端 API 承担）
+  authorized = true
+  try {
+    sessionStorage.setItem('portfolio-admin-ok', '1')
+  } catch {
+    /* ignore */
+  }
+  listeners.forEach((l) => l())
+  return true
 }
 export function useAuthorized() {
   return useSyncExternalStore(subscribeEdits, isAuthorized)
