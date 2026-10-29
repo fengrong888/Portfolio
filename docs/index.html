@@ -16,6 +16,43 @@
           }
         } catch (e) {}
       })()
+      // 主资源 CDN 挂起保护：JS/CSS 走 jsDelivr 国内节点加速；
+      // 若 CDN 请求挂起（不报错也不返回）且应用 6 秒内未启动，
+      // 自动把资源改回 GitHub Pages 原站重新加载，杜绝白屏。
+      ;(function () {
+        try {
+          var t0 = Date.now()
+          var iv = setInterval(function () {
+            if (window.__PF_BOOT__) {
+              clearInterval(iv)
+              return
+            }
+            if (Date.now() - t0 > 6000) {
+              clearInterval(iv)
+              var re = /https:\/\/cdn\.jsdelivr\.net\/gh\/[^/]+\/[^@]+@[^/]+\/docs\//
+              var s = document.querySelector('script[type="module"]')
+              if (s && s.src.indexOf('cdn.jsdelivr.net') >= 0) {
+                var originSrc = s.src.replace(re, './')
+                s.onerror = null
+                s.remove()
+                var s2 = document.createElement('script')
+                s2.type = 'module'
+                s2.src = originSrc
+                document.head.appendChild(s2)
+              }
+              var l = document.querySelector('link[rel="stylesheet"][href*="cdn.jsdelivr.net"]')
+              if (l) {
+                var originHref = l.href.replace(re, './')
+                l.remove()
+                var l2 = document.createElement('link')
+                l2.rel = 'stylesheet'
+                l2.href = originHref
+                document.head.appendChild(l2)
+              }
+            }
+          }, 500)
+        } catch (e) {}
+      })()
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fengrong-Portfolio</title>
@@ -33,8 +70,8 @@
       href="https://miaoda.feishu.cn/fonts/css2?family=IBM+Plex+Mono:wght@400;500&family=Karla:wght@300;400;500&family=Manrope:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500&family=Anton&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="./assets/index-CINOnhK2.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CPbmUL2Q.css">
+    <script type="module" crossorigin src="https://cdn.jsdelivr.net/gh/fengrong888/Portfolio@main/docs/assets/index-DL3u9MDo.js" onerror="this.onerror=null;var s=document.createElement('script');s.type='module';s.src='./assets/index-DL3u9MDo.js';document.head.appendChild(s)"></script>
+    <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/fengrong888/Portfolio@main/docs/assets/index-CPbmUL2Q.css" onerror="this.onerror=null;var l=document.createElement('link');l.rel='stylesheet';l.href='./assets/index-CPbmUL2Q.css';document.head.appendChild(l)">
   </head>
   <body>
     <div id="root"></div>
