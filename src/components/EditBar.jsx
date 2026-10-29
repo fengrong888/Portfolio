@@ -45,7 +45,7 @@ export default function EditBar() {
 
   const openAccessLogin = () => {
     if (!ADMIN_API_URL) return
-    const url = new URL(`${ADMIN_API_URL.replace(/\\/+$/, '')}/api/contents`)
+    const url = new URL(`${ADMIN_API_URL.replace(/\/+$/, '')}/api/contents`)
     url.searchParams.set('path', 'docs/data/portfolio-data.json')
     window.open(url.toString(), '_blank', 'noopener,noreferrer')
   }
