@@ -339,6 +339,9 @@ export default {
     const headers = {
       Accept: 'application/vnd.github+json',
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      // GitHub API 强制要求请求携带 User-Agent，缺失时返回 403
+      // "Request forbidden by administrative rules … has a User-Agent header"
+      'User-Agent': 'portfolio-admin-worker/1.0',
       'X-GitHub-Api-Version': '2022-11-28',
       ...(upBody ? { 'Content-Type': 'application/json' } : {}),
     };
