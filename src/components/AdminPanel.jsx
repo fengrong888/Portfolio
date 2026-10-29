@@ -661,7 +661,7 @@ export default function AdminPanel() {
       )}
       {!cloud.expired && cloud.configured && (
         <div className="adminpanel__cloud adminpanel__cloud--ok">
-          <h3>{isAdminWorkerConfigured() ? '安全云端同步（Cloudflare Access）' : '云端同步（全设备）'}</h3>
+          <h3>{isAdminWorkerConfigured() ? '安全云端同步（服务端密码）' : '云端同步（全设备）'}</h3>
           <p className="adminpanel__cloud-status">
             {cloud.syncing
               ? '正在连接…'

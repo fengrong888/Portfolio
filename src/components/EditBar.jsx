@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { setEditing, useEditing, useAuthorized, checkPassword, isAdminWorkerConfigured, clearAdminAuth } from '../lib/edits'
+import { setEditing, useEditing, useAuthorized, checkPassword, isAdminWorkerConfigured, clearAdminAuth, getAdminSession } from '../lib/edits'
 
 // 后台入口：Shift+E 唤起。workerMode 下输入后台密码（密码由服务端校验，前端无明文）；
 // 未配置 Worker（旧 PAT 过渡期）仅确认框防误入。
@@ -30,12 +30,17 @@ export default function EditBar() {
           setEditing(false)
           return
         }
-        if (authorized) {
+        if (isAdminWorkerConfigured()) {
+          // Worker 模式：必须有服务端会话才能进入（旧授权标记但无会话 → 重新输密码）
+          if (authorized && getAdminSession()) {
+            setEditing(true)
+          } else {
+            setAskPw(true)
+            setPw('')
+            setWrong(false)
+          }
+        } else if (authorized) {
           setEditing(true)
-        } else if (isAdminWorkerConfigured()) {
-          setAskPw(true)
-          setPw('')
-          setWrong(false)
         } else {
           // 未配置 Worker（旧 PAT 过渡期）：前端无明文密码，仅确认框防误入
           if (window.confirm('进入后台管理？\n\n（服务端密码尚未启用，此确认仅防止误入）')) {

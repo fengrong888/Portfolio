@@ -683,7 +683,7 @@ export async function checkTokenValidity() {
         return { ok: true, expired: false }
       }
       if (res.status === 401 || res.status === 403) {
-        syncError = '后台身份验证失败，请重新登录（Cloudflare Access 或后台密码）'
+        syncError = '后台登录已过期，请重新登录（Shift+E 输入后台密码）'
         tokenExpired = false
         notifyCloud()
         window.dispatchEvent(new CustomEvent('admin-auth-expired'))
