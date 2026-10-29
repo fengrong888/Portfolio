@@ -346,8 +346,22 @@ export async function checkPassword(pw) {
         body: JSON.stringify({ password: pw }),
       })
     } catch {
-      // 网络失败/超时：与密码错误严格区分，避免误导
-      return 'network'
+      // 首次网络失败可能是瞬时波动：短暂等待后自动重试一次
+      if (!sessionStorage.getItem('pf-pw-retried')) {
+        try { sessionStorage.setItem('pf-pw-retried', '1') } catch { /* ignore */ }
+        await new Promise((res) => setTimeout(res, 1200))
+        try {
+          r = await fetch(`${ADMIN_API_URL.replace(/\/+$/, '')}/api/auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pw }),
+          })
+        } catch {
+          /* 仍失败 */
+        }
+      }
+      try { sessionStorage.removeItem('pf-pw-retried') } catch { /* ignore */ }
+      if (!r) return 'network'
     }
     if (r.ok) {
       const j = await r.json().catch(() => ({}))
