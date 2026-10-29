@@ -676,9 +676,8 @@ export async function checkTokenValidity() {
           headers: {
             Accept: 'application/vnd.github+json',
             'Content-Type': 'application/json',
-            ...(session ? { 'X-Admin-Session': session } : {}),
           },
-          body: JSON.stringify({ path: CLOUD_FILE }),
+          body: JSON.stringify({ path: CLOUD_FILE, ...(session ? { session } : {}) }),
         },
         8000
       )
@@ -766,9 +765,11 @@ async function ghFetch(path, init) {
   let url = workerMode ? adminApiURL() : cloudURL(path)
   let opts = init || {}
   if (workerMode) {
-    // 路径不放在 URL query（Cloudflare WAF 会按路径穿越模式拦截 403），统一放请求体；
-    // 读（无 body）→ POST {path}；写（原 PUT）→ POST {path, message, content, sha}；删图 → DELETE {path, message, sha}
-    let payload = { path }
+    // 路径与会话令牌都放进请求体（Cloudflare WAF 会拦截 query 路径穿越模式与
+    // X-Admin-* 请求头，均返回 "administrative rules" 403），不再使用自定义请求头；
+    // 读（无 body）→ POST {path, session}；写（原 PUT）→ POST {path, session, message, content, sha}；
+    // 删图 → DELETE {path, session, message, sha}
+    let payload = { path, ...(session ? { session } : {}) }
     if (init && init.body) {
       try {
         payload = { ...payload, ...JSON.parse(init.body) }
@@ -784,7 +785,6 @@ async function ghFetch(path, init) {
     headers: {
       Accept: 'application/vnd.github+json',
       ...(!workerMode && token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(workerMode && session ? { 'X-Admin-Session': session } : {}),
       ...(opts.headers || {}),
     },
   }, 8000)

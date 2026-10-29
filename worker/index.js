@@ -205,9 +205,12 @@ async function hmacHex(data, key) {
   return [...new Uint8Array(s)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// 校验 X-Admin-Session 令牌（密码登录签发的会话）
-async function verifySession(request, env) {
-  const tok = request.headers.get('X-Admin-Session');
+// 校验会话令牌（密码登录签发）。令牌经 X-Admin-Session 头或请求体 body.session 传递——
+// 注意：请求头 X-Admin-Session 会被 Cloudflare WAF 的"管理员访问"托管规则拦截（403），
+// 因此前端一律改走请求体传递，头部仅作兼容。
+async function verifySession(request, env, body) {
+  let tok = request.headers.get('X-Admin-Session');
+  if (!tok && body && typeof body.session === 'string') tok = body.session;
   if (!tok || typeof tok !== 'string') return false;
   const m = tok.match(/^([A-Za-z0-9_-]+)\.([a-f0-9]{64})$/);
   if (!m) return false;
@@ -248,19 +251,8 @@ export default {
     if (!['GET', 'PUT', 'POST', 'DELETE'].includes(request.method)) {
       return response(JSON.stringify({ error: 'Method not allowed' }), 405, { ...cors, Allow: 'GET, PUT, POST, DELETE, OPTIONS' });
     }
-    // 鉴权：Cloudflare Access JWT 或密码登录签发的会话令牌，二者任一有效即放行。
-    // 未配置 Access 环境变量时（接入前），仅密码会话生效。
-    const authed = (await verifyAccessJwt(request, env)) || (await verifySession(request, env));
-    if (!authed) {
-      return response(JSON.stringify({ error: 'Unauthorized' }), 401, cors);
-    }
-    if (!env.GITHUB_TOKEN) {
-      return response(JSON.stringify({ error: 'Server is not configured' }), 503, cors);
-    }
 
-    // 目标路径：优先取请求体 body.path（规避 Cloudflare WAF 对 query 路径穿越模式
-    // 的拦截，国内账户常命中 "administrative rules" 403）；旧版 query ?path= 仍兼容。
-    let path = url.searchParams.get('path') || '';
+    // 先解析请求体（会话令牌也经 body.session 传递，规避 WAF 对 X-Admin-* 请求头的拦截）
     let body = null;
     if (request.method !== 'GET') {
       const length = Number(request.headers.get('Content-Length') || 0);
@@ -273,16 +265,30 @@ export default {
       if (!body || typeof body !== 'object') {
         return response(JSON.stringify({ error: 'Invalid JSON body' }), 400, cors);
       }
-      if (typeof body.path === 'string') path = body.path;
-      // 写操作校验：POST/PUT 写 JSON 需 content；DELETE 需 sha
-      if (request.method === 'DELETE') {
-        if (typeof body.sha !== 'string') {
-          return response(JSON.stringify({ error: 'A file SHA is required for deletion' }), 400, cors);
-        }
-      } else if (!(request.method === 'POST' && typeof body.content !== 'string')) {
-        if (typeof body.content !== 'string' || body.content.length > 8_500_000) {
-          return response(JSON.stringify({ error: 'Invalid or oversized content' }), 413, cors);
-        }
+    }
+
+    // 鉴权：Cloudflare Access JWT 或密码登录签发的会话令牌（头或请求体），二者任一有效即放行。
+    // 未配置 Access 环境变量时（接入前），仅密码会话生效。
+    const authed = (await verifyAccessJwt(request, env)) || (await verifySession(request, env, body));
+    if (!authed) {
+      return response(JSON.stringify({ error: 'Unauthorized' }), 401, cors);
+    }
+    if (!env.GITHUB_TOKEN) {
+      return response(JSON.stringify({ error: 'Server is not configured' }), 503, cors);
+    }
+
+    // 目标路径：优先取请求体 body.path（规避 Cloudflare WAF 对 query 路径穿越模式
+    // 的拦截，国内账户常命中 "administrative rules" 403）；旧版 query ?path= 仍兼容。
+    let path = url.searchParams.get('path') || '';
+    if (body && typeof body.path === 'string') path = body.path;
+    // 写操作校验：POST/PUT 写 JSON 需 content；DELETE 需 sha
+    if (request.method === 'DELETE') {
+      if (typeof body.sha !== 'string') {
+        return response(JSON.stringify({ error: 'A file SHA is required for deletion' }), 400, cors);
+      }
+    } else if (!(request.method === 'POST' && typeof body.content !== 'string')) {
+      if (typeof body.content !== 'string' || body.content.length > 8_500_000) {
+        return response(JSON.stringify({ error: 'Invalid or oversized content' }), 413, cors);
       }
     }
     if (!allowedPath(path)) {
