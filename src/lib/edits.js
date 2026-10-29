@@ -669,10 +669,16 @@ export async function checkTokenValidity() {
     try {
       const session = getAdminSession()
       const res = await fetchTimeout(
-        adminApiURL(CLOUD_FILE),
+        adminApiURL(),
         {
+          method: 'POST',
           credentials: 'include',
-          headers: { Accept: 'application/vnd.github+json', ...(session ? { 'X-Admin-Session': session } : {}) },
+          headers: {
+            Accept: 'application/vnd.github+json',
+            'Content-Type': 'application/json',
+            ...(session ? { 'X-Admin-Session': session } : {}),
+          },
+          body: JSON.stringify({ path: CLOUD_FILE }),
         },
         8000
       )
@@ -751,22 +757,35 @@ function notifyCloud() {
 function cloudURL(path) {
   return `https://api.github.com/repos/${CLOUD_REPO}/contents/${path}`
 }
-function adminApiURL(path) {
-  const url = new URL(`${ADMIN_API_URL.replace(/\/+$/, '')}/api/contents`)
-  url.searchParams.set('path', path)
-  return url.toString()
+function adminApiURL() {
+  return `${ADMIN_API_URL.replace(/\/+$/, '')}/api/contents`
 }
 async function ghFetch(path, init) {
   const workerMode = !!ADMIN_API_URL
   const session = workerMode ? getAdminSession() : ''
-  const res = await fetchTimeout(workerMode ? adminApiURL(path) : cloudURL(path), {
-    ...init,
+  let url = workerMode ? adminApiURL() : cloudURL(path)
+  let opts = init || {}
+  if (workerMode) {
+    // 路径不放在 URL query（Cloudflare WAF 会按路径穿越模式拦截 403），统一放请求体；
+    // 读（无 body）→ POST {path}；写（原 PUT）→ POST {path, message, content, sha}；删图 → DELETE {path, message, sha}
+    let payload = { path }
+    if (init && init.body) {
+      try {
+        payload = { ...payload, ...JSON.parse(init.body) }
+      } catch {
+        /* ignore: keep only path */
+      }
+    }
+    opts = { ...init, method: init && init.method === 'DELETE' ? 'DELETE' : 'POST', body: JSON.stringify(payload) }
+  }
+  const res = await fetchTimeout(url, {
+    ...opts,
     ...(workerMode ? { credentials: 'include' } : {}),
     headers: {
       Accept: 'application/vnd.github+json',
       ...(!workerMode && token ? { Authorization: `Bearer ${token}` } : {}),
       ...(workerMode && session ? { 'X-Admin-Session': session } : {}),
-      ...(init?.headers || {}),
+      ...(opts.headers || {}),
     },
   }, 8000)
   // Legacy mode checks PAT validity; Worker mode reports Access/session errors without prompting for a browser PAT.

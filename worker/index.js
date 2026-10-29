@@ -245,8 +245,8 @@ export default {
     if (url.pathname !== '/api/contents') {
       return response(JSON.stringify({ error: 'Not found' }), 404, cors);
     }
-    if (!['GET', 'PUT', 'DELETE'].includes(request.method)) {
-      return response(JSON.stringify({ error: 'Method not allowed' }), 405, { ...cors, Allow: 'GET, PUT, DELETE, OPTIONS' });
+    if (!['GET', 'PUT', 'POST', 'DELETE'].includes(request.method)) {
+      return response(JSON.stringify({ error: 'Method not allowed' }), 405, { ...cors, Allow: 'GET, PUT, POST, DELETE, OPTIONS' });
     }
     // 鉴权：Cloudflare Access JWT 或密码登录签发的会话令牌，二者任一有效即放行。
     // 未配置 Access 环境变量时（接入前），仅密码会话生效。
@@ -258,12 +258,10 @@ export default {
       return response(JSON.stringify({ error: 'Server is not configured' }), 503, cors);
     }
 
-    const path = url.searchParams.get('path') || '';
-    if (!allowedPath(path)) {
-      return response(JSON.stringify({ error: 'Path not allowed' }), 400, cors);
-    }
-
-    let body;
+    // 目标路径：优先取请求体 body.path（规避 Cloudflare WAF 对 query 路径穿越模式
+    // 的拦截，国内账户常命中 "administrative rules" 403）；旧版 query ?path= 仍兼容。
+    let path = url.searchParams.get('path') || '';
+    let body = null;
     if (request.method !== 'GET') {
       const length = Number(request.headers.get('Content-Length') || 0);
       if (length > 9_000_000) return response(JSON.stringify({ error: 'Payload too large' }), 413, cors);
@@ -272,29 +270,52 @@ export default {
       } catch {
         return response(JSON.stringify({ error: 'Invalid JSON body' }), 400, cors);
       }
-      if (!body || typeof body !== 'object' || typeof body.message !== 'string') {
-        return response(JSON.stringify({ error: 'Invalid GitHub contents payload' }), 400, cors);
+      if (!body || typeof body !== 'object') {
+        return response(JSON.stringify({ error: 'Invalid JSON body' }), 400, cors);
       }
-      if (request.method === 'PUT' && (typeof body.content !== 'string' || body.content.length > 8_500_000)) {
-        return response(JSON.stringify({ error: 'Invalid or oversized content' }), 413, cors);
+      if (typeof body.path === 'string') path = body.path;
+      // 写操作校验：POST/PUT 写 JSON 需 content；DELETE 需 sha
+      if (request.method === 'DELETE') {
+        if (typeof body.sha !== 'string') {
+          return response(JSON.stringify({ error: 'A file SHA is required for deletion' }), 400, cors);
+        }
+      } else if (!(request.method === 'POST' && typeof body.content !== 'string')) {
+        if (typeof body.content !== 'string' || body.content.length > 8_500_000) {
+          return response(JSON.stringify({ error: 'Invalid or oversized content' }), 413, cors);
+        }
       }
-      if (request.method === 'DELETE' && typeof body.sha !== 'string') {
-        return response(JSON.stringify({ error: 'A file SHA is required for deletion' }), 400, cors);
+    }
+    if (!allowedPath(path)) {
+      return response(JSON.stringify({ error: 'Path not allowed' }), 400, cors);
+    }
+
+    // 映射到 GitHub Contents API：
+    //   GET 读；POST 读（仅 body.path）→ GitHub GET；POST 写（带 content）/ PUT → GitHub PUT；DELETE → GitHub DELETE
+    let upMethod = request.method;
+    let upBody = body;
+    if (request.method === 'POST') {
+      if (body && typeof body.content === 'string') upMethod = 'PUT';
+      else {
+        upMethod = 'GET';
+        upBody = null;
       }
+    }
+    if (upMethod === 'PUT' && body && typeof body.message !== 'string') {
+      return response(JSON.stringify({ error: 'Invalid GitHub contents payload' }), 400, cors);
     }
 
     const headers = {
       Accept: 'application/vnd.github+json',
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
       'X-GitHub-Api-Version': '2022-11-28',
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(upBody ? { 'Content-Type': 'application/json' } : {}),
     };
     let upstream;
     try {
       upstream = await fetch(API + path.split('/').map(encodeURIComponent).join('/'), {
-        method: request.method,
+        method: upMethod,
         headers,
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        ...(upBody ? { body: JSON.stringify(upBody) } : {}),
       });
       const payload = await upstream.text();
       return new Response(payload, {
