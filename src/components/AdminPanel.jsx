@@ -457,9 +457,12 @@ export default function AdminPanel() {
   const [tok, setTok] = useState(getCloudToken())
   const [migMsg, setMigMsg] = useState('')
 
-  // 打开后台即校验令牌有效性：过期时显示重新输入窗口
+  // 打开后台即校验令牌有效性：过期时显示重新输入窗口；登录成功后立即重检
   useEffect(() => {
     checkTokenValidity()
+    const onLogin = () => checkTokenValidity()
+    window.addEventListener('admin-logged-in', onLogin)
+    return () => window.removeEventListener('admin-logged-in', onLogin)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   // 各作品行是否有未提交的文字修改（关闭时提醒保存）

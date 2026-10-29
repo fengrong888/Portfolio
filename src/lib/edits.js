@@ -663,12 +663,14 @@ function markTokenExpired() {
   }
 }
 
-// 主动校验令牌有效性（后台打开时调用）：GET /user，401/403 = 过期
+// 主动校验令牌有效性（后台打开时调用）：POST /api/contents 轻量探测，401/403 = 会话失效
 export async function checkTokenValidity() {
   if (ADMIN_API_URL) {
+    const session = getAdminSession()
+    // 尚未登录：静默等待（不弹"已过期"），登录成功后由 EditBar 再触发校验
+    if (!session) return { ok: false, expired: false }
     try {
-      const session = getAdminSession()
-      const res = await fetchTimeout(
+      let res = await fetchTimeout(
         adminApiURL(),
         {
           method: 'POST',
@@ -677,10 +679,26 @@ export async function checkTokenValidity() {
             Accept: 'application/vnd.github+json',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ path: CLOUD_FILE, ...(session ? { pf: session } : {}) }),
+          body: JSON.stringify({ path: CLOUD_FILE, pf: session }),
         },
         8000
       )
+      // 首次请求偶发冷启动/网关 5xx：短暂等待后自动重试一次，避免误报"连接异常"
+      if ((res.status === 502 || res.status === 503 || res.status === 504) && !sessionStorage.getItem('pf-retried')) {
+        try { sessionStorage.setItem('pf-retried', '1') } catch { /* ignore */ }
+        await new Promise((r) => setTimeout(r, 1200))
+        res = await fetchTimeout(
+          adminApiURL(),
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: { Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: CLOUD_FILE, pf: session }),
+          },
+          8000
+        )
+      }
+      try { sessionStorage.removeItem('pf-retried') } catch { /* ignore */ }
       if (res.ok) {
         syncError = ''
         tokenExpired = false

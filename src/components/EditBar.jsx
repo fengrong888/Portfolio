@@ -58,6 +58,8 @@ export default function EditBar() {
     if (r === true) {
       setAskPw(false)
       setEditing(true)
+      // 通知云端状态区立即重检（覆盖首次进入的时序竞态）
+      window.dispatchEvent(new CustomEvent('admin-logged-in'))
     } else if (r === 'not-enabled') {
       setWrong(true)
       setPw('')
