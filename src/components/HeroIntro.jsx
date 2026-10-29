@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useWorks } from '../lib/edits'
+import { useWorks, jsdelivrUrl, isCdnBad } from '../lib/edits'
 
 // 开屏首页动画：黑底 + 右侧 Portfolio 大字；鼠标移动时随机作品封面
 // 从鼠标中心最小放大浮现、旋转跟随鼠标轨迹、停留后缩小消失；
@@ -11,8 +11,10 @@ export default function HeroIntro({ onDone }) {
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
-    // 随机作品封面（尽量不连续重复）
-    const covers = works.map((w) => w.img).filter(Boolean)
+    // 随机作品封面（尽量不连续重复）：优先走 jsDelivr 国内 CDN（熔断期回退原站），
+    // 避免开屏被站内/境外图拖慢
+    const toUrl = (u) => (isCdnBad() ? u : jsdelivrUrl(u))
+    const covers = works.map((w) => toUrl(w.img)).filter(Boolean)
     if (!covers.length) return
     let lastIdx = -1
     const pick = () => {
@@ -21,10 +23,10 @@ export default function HeroIntro({ onDone }) {
       lastIdx = idx
       return covers[idx]
     }
-    // 只预热首批封面，避免开屏时一次性下载全部作品图；其余封面在实际生成时再解码。
+    // 只预热少量封面（CDN 化），避免开屏时一次性下载多张作品图；其余封面在实际生成时再解码。
     // 已预热图片可直接复用，未预热图片也会在 decode 完成后正常浮现。
     const ready = new Map()
-    covers.slice(0, 8).forEach((src) => {
+    covers.slice(0, 4).forEach((src) => {
       const im = new Image()
       im.decoding = 'async'
       im.src = src
