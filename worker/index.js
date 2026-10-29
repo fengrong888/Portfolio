@@ -38,7 +38,7 @@ function corsHeaders(origin, env) {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Session',
     'Access-Control-Max-Age': '600',
     'Vary': 'Origin',
   };
