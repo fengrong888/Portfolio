@@ -111,9 +111,7 @@ dl, dd { margin: 0; }
 }
 
 .nav.scrolled {
-  background: rgba(19, 17, 16, 0.28);
-  -webkit-backdrop-filter: blur(12px) saturate(1.05);
-  backdrop-filter: blur(12px) saturate(1.05);
+  background: transparent;
   border-bottom-color: var(--hairline);
 }
 
@@ -268,8 +266,8 @@ dl, dd { margin: 0; }
   position: absolute;
   inset: 0;
   will-change: transform;
-  /* 图片未加载完成时的占位底色（深灰而非纯黑，区分「加载中」与「空」） */
-  background: #191919;
+  /* 图片未加载完成时的占位底色：与网站背景底色一致，无突兀色块 */
+  background: var(--canvas);
 }
 
 .card__img {
@@ -357,9 +355,7 @@ dl, dd { margin: 0; }
   justify-content: space-between;
   gap: 20px;
   padding-inline: var(--gut);
-  background: rgba(15, 14, 13, 0.55);
-  -webkit-backdrop-filter: blur(12px) saturate(1.1);
-  backdrop-filter: blur(12px) saturate(1.1);
+  background: transparent;
   border-bottom: 1px solid var(--hairline);
 }
 
@@ -389,8 +385,8 @@ dl, dd { margin: 0; }
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  /* 顶部留出固定导航的高度，首图不被遮挡 */
-  padding-top: var(--nav-h);
+  /* 图片从页面最顶部开始展示（顶部栏为全透明，不遮挡视觉） */
+  padding-top: 0;
 }
 
 .detail__figure {
@@ -399,14 +395,14 @@ dl, dd { margin: 0; }
   position: relative;
   clip-path: inset(0 0 100% 0);
   transition: clip-path 1.15s var(--ease-out-expo);
-  /* 图片加载中的浅灰占位，避免深色背景下整页黑屏 */
-  background: rgba(255, 255, 255, 0.05);
+  /* 图片加载中的占位：与网站背景底色一致，加载过程无突兀灰块 */
+  background: var(--canvas);
 }
 /* 图片整链路失败的兜底占位：无文字、无边框干扰，纯色微呼吸动效保持画面干净 */
 .detail__img-fallback {
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--canvas);
   border-radius: 6px;
   animation: img-fallback-pulse 2.4s ease-in-out infinite;
 }
