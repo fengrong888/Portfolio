@@ -103,16 +103,13 @@ dl, dd { margin: 0; }
   align-items: center;
   justify-content: space-between;
   padding-inline: var(--gut);
-  border-bottom: 1px solid transparent;
   transition:
     background 0.5s var(--ease),
-    border-color 0.5s var(--ease),
     backdrop-filter 0.5s var(--ease);
 }
 
 .nav.scrolled {
   background: transparent;
-  border-bottom-color: var(--hairline);
 }
 
 .nav__logo {
@@ -144,7 +141,7 @@ dl, dd { margin: 0; }
   position: relative;
   padding: 6px 0;
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 550;
   letter-spacing: 0.18em;
   color: var(--ink-dim);
@@ -356,7 +353,6 @@ dl, dd { margin: 0; }
   gap: 20px;
   padding-inline: var(--gut);
   background: transparent;
-  border-bottom: 1px solid var(--hairline);
 }
 
 .detail__back,
@@ -1854,5 +1850,4 @@ body.intro-mode .nav {
   background: transparent;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  border-bottom-color: transparent;
 }
