@@ -569,7 +569,7 @@ body:not(.nav-touched) .nav__link.active { font-weight: 550; }
    ============================================================ */
 .about {
   min-height: 100vh;
-  padding-top: calc(var(--nav-h) + clamp(56px, 7vw, 104px));
+  padding-top: calc(var(--nav-h) + clamp(40px, 5.4vw, 84px));
   padding-bottom: clamp(60px, 8vw, 120px);
   /* 主体区（照片+信息，总宽 60.5vw）居中时的左边缘，供照片/横线/标题统一左对齐 */
   --about-left: calc((100vw - 60.5vw) / 2);
@@ -611,6 +611,9 @@ body:not(.nav-touched) .nav__link.active { font-weight: 550; }
   background: var(--surface);
   clip-path: inset(0 0 100% 0);
   transition: clip-path 1.2s var(--ease-out-expo) 0.1s;
+  /* 仅照片视觉下移（不动横线/文字/LOGO墙），不参与布局推挤 */
+  position: relative;
+  top: clamp(12px, 1.6vw, 24px);
 }
 .in .about__portrait { clip-path: inset(0 0 0 0); }
 
