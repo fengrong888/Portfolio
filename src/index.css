@@ -148,7 +148,7 @@ dl, dd { margin: 0; }
   transition: color 0.3s;
 }
 .nav__link:hover { color: var(--ink); }
-.nav__link.active { color: var(--ink); }
+.nav__link.active { color: var(--ink); font-weight: 600; }
 
 
 /* 导航按钮进场：遮罩揭幕 + 错峰上移（仅打开网站时播一次） */
