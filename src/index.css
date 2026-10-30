@@ -26,7 +26,7 @@
   --accent-bright: #DCC394;
 
   --nav-h: 76px;
-  --gut: clamp(16px, 2.2vw, 44px);
+  --gut: clamp(12px, 1.5vw, 32px);
   --gap: clamp(12px, 1.4vw, 22px);
 
   --font-display: 'Space Grotesk', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -571,11 +571,11 @@ dl, dd { margin: 0; }
   padding-bottom: clamp(60px, 8vw, 120px);
 }
 
-/* 参考图版式两根横线：顶部（导航下）与 LOGO 墙标题下，均跨页宽 19%~81% */
+/* 参考图版式两根横线：顶部（导航下）与 LOGO 墙标题下，左边缘与左侧照片对齐 */
 .about__rule-top,
 .about__rule-bottom {
   width: 62vw;
-  margin-inline: 19vw;
+  margin-left: 20.5vw;
   height: 1px;
   background: rgba(236, 230, 220, 0.32);
 }
