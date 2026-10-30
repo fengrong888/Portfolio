@@ -571,8 +571,9 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   min-height: 100vh;
   padding-top: calc(var(--nav-h) + clamp(40px, 5.4vw, 84px));
   padding-bottom: clamp(60px, 8vw, 120px);
-  /* 主体区（照片+信息，总宽 60.5vw）居中时的左边缘，供照片/横线/标题统一左对齐 */
-  --about-left: calc((100vw - 60.5vw) / 2);
+  /* 主体区（照片+信息，总宽 62vw 与横线/LOGO墙同宽）居中时的左边缘，
+     供照片/横线/标题/LOGO墙统一左对齐（=19vw） */
+  --about-left: calc((100vw - 62vw) / 2);
 }
 
 /* 参考图版式两根横线：顶部（导航下）与 LOGO 墙标题下，左边缘与左侧照片对齐 */
@@ -587,11 +588,11 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   margin-bottom: clamp(20px, 3vw, 44px);
 }
 
-/* 主体：照片+信息整体居中（左右留白对称），照片左边缘与横线/标题对齐 */
+/* 主体：照片+信息整体居中（左右留白对称），照片左边缘与横线/标题/LOGO墙对齐 */
 .about__profile {
   display: grid;
   grid-template-columns: 24.5vw minmax(0, 19.5vw);
-  gap: 16.5vw;
+  gap: 18vw;
   margin-left: var(--about-left);
   align-items: start;
 }
@@ -728,7 +729,7 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
 
 .about__clients-wall {
   width: 62vw;
-  margin-inline: 19vw;
+  margin-inline: var(--about-left);
   margin-top: clamp(48px, 6vw, 96px);
 }
 .about__clients-wall img {
