@@ -149,8 +149,8 @@ dl, dd { margin: 0; }
 }
 .nav__link:hover { color: var(--ink); }
 .nav__link.active { color: var(--ink); font-weight: 600; }
-/* 进入网站后（未点击过导航）：三个按钮默认都不加粗，点击后才加粗 */
-body:not(.nav-touched) .nav__link.active { font-weight: 550; }
+/* 进入网站后（未点击过导航）：三个按钮默认都不加粗、色彩一致（未点击态），点击后才激活 */
+body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 550; }
 
 
 /* 导航按钮进场：遮罩揭幕 + 错峰上移（仅打开网站时播一次） */
