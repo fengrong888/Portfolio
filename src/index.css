@@ -149,6 +149,8 @@ dl, dd { margin: 0; }
 }
 .nav__link:hover { color: var(--ink); }
 .nav__link.active { color: var(--ink); font-weight: 600; }
+/* 进入网站后（未点击过导航）：三个按钮默认都不加粗，点击后才加粗 */
+body:not(.nav-touched) .nav__link.active { font-weight: 550; }
 
 
 /* 导航按钮进场：遮罩揭幕 + 错峰上移（仅打开网站时播一次） */
@@ -567,7 +569,7 @@ dl, dd { margin: 0; }
    ============================================================ */
 .about {
   min-height: 100vh;
-  padding-top: calc(var(--nav-h) + clamp(40px, 5.4vw, 84px));
+  padding-top: calc(var(--nav-h) + clamp(56px, 7vw, 104px));
   padding-bottom: clamp(60px, 8vw, 120px);
   /* 主体区（照片+信息，总宽 60.5vw）居中时的左边缘，供照片/横线/标题统一左对齐 */
   --about-left: calc((100vw - 60.5vw) / 2);

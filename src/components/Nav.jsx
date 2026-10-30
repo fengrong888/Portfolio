@@ -24,6 +24,7 @@ function NavItem({ l, i }) {
     <NavLink
       to={l.to}
       end={l.end}
+      onClick={() => document.body.classList.add('nav-touched')}
       className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`}
     >
       <span className="nav__link-mask">
@@ -72,7 +73,8 @@ export default function Nav() {
         className="nav__logo"
         aria-label="返回作品首页"
         onClick={() => {
-          // 点击左上角 logo → 重新进入开屏首页动画
+          // 点击左上角 logo → 重新进入开屏首页动画；同时视为导航交互（激活加粗生效）
+          document.body.classList.add('nav-touched')
           window.dispatchEvent(new Event('open-intro'))
         }}
       >
