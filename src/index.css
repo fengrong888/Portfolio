@@ -381,8 +381,8 @@ dl, dd { margin: 0; }
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  /* 图片从页面最顶部开始展示（顶部栏为全透明，不遮挡视觉） */
-  padding-top: 0;
+  /* 顶部留出固定导航的高度，首图不被遮挡 */
+  padding-top: var(--nav-h);
 }
 
 .detail__figure {
