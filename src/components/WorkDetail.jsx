@@ -12,6 +12,7 @@ function DetailFigure({ src, alt }) {
   const ref = useRef(null)
   const [stage, setStage] = useState(0) // 0=CDN, 1=原站回退, 2=等待重试
   const [attempt, setAttempt] = useState(0) // 整链路重试次数（用于退避间隔）
+  const [ar, setAr] = useState(null) // 图片自然宽高比：加载完成后校准容器，避免高度跳变
 
   useEffect(() => {
     const el = ref.current
@@ -71,9 +72,9 @@ function DetailFigure({ src, alt }) {
   const cdnSrc = useCdn ? `${jsdelivrUrl(src)}${attempt ? `?r=${attempt}` : ''}` : `${src}${src.includes('?') ? '&' : '?'}r=${attempt}`
 
   return (
-    <figure ref={ref} className="detail__figure">
+    <figure ref={ref} className="detail__figure" style={ar ? { aspectRatio: ar } : undefined}>
       {stage >= 2 ? (
-        <div className="detail__img-fallback">图片加载中…</div>
+        <div className="detail__img-fallback" aria-hidden="true" />
       ) : (
         <img
           className="detail__img"
@@ -81,6 +82,12 @@ function DetailFigure({ src, alt }) {
           alt={alt}
           loading="lazy"
           decoding="async"
+          fetchPriority="high"
+          onLoad={(e) => {
+            const n = e.target.naturalWidth
+            const m = e.target.naturalHeight
+            if (n > 0 && m > 0) setAr(n / m)
+          }}
           onError={() => setStage((s) => Math.min(s + 1, 2))}
         />
       )}
@@ -126,6 +133,17 @@ export default function WorkDetail() {
   }
 
   const shots = work.shots || []
+
+  // 首图预加载提速：数据就绪立即请求第一张详情图（走 CDN），提前开始传输
+  useEffect(() => {
+    if (!work || !shots.length) return
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.href = jsdelivrUrl(shots[0])
+    document.head.appendChild(link)
+    return () => link.remove()
+  }, [work?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <main className="detail">

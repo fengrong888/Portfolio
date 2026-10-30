@@ -402,19 +402,17 @@ dl, dd { margin: 0; }
   /* 图片加载中的浅灰占位，避免深色背景下整页黑屏 */
   background: rgba(255, 255, 255, 0.05);
 }
-/* 图片加载失败的兜底提示块 */
+/* 图片整链路失败的兜底占位：无文字、无边框干扰，纯色微呼吸动效保持画面干净 */
 .detail__img-fallback {
   width: 100%;
   aspect-ratio: 4 / 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(244, 241, 234, 0.45);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  border: 1px dashed rgba(244, 241, 234, 0.18);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 6px;
+  animation: img-fallback-pulse 2.4s ease-in-out infinite;
+}
+@keyframes img-fallback-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
 }
 
 /* 首图封面信息区：页面最左侧顶部（返回作品正下方、左对齐），三行同字号、横线隔开 */
