@@ -6,6 +6,13 @@ import { useEdit, useEditing } from '../lib/edits'
 // 打开网站时的导航进场动效：只播一次（路由切换不重播，刷新重播）
 let didIntro = false
 
+// 导航点击态：点击过任一导航按钮后进入"激活加粗"状态；
+// 用 sessionStorage 持久化——刷新后保持加粗；重新打开浏览器（新会话）回到默认不加粗
+function markTouched() {
+  document.body.classList.add('nav-touched')
+  sessionStorage.setItem('nav-touched', '1')
+}
+
 // 逐字渲染：正常浏览时逐字上浮转金；编辑模式下自动切回可编辑整词
 function NavLetters({ text }) {
   return (
@@ -24,7 +31,7 @@ function NavItem({ l, i }) {
     <NavLink
       to={l.to}
       end={l.end}
-      onClick={() => document.body.classList.add('nav-touched')}
+      onClick={() => markTouched()}
       className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`}
     >
       <span className="nav__link-mask">
@@ -54,6 +61,13 @@ export default function Nav() {
   }, [])
 
   useEffect(() => {
+    // 刷新后恢复点击态：用户之前点击过导航，则当前页保持加粗
+    if (sessionStorage.getItem('nav-touched') === '1') {
+      document.body.classList.add('nav-touched')
+    }
+  }, [])
+
+  useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -67,18 +81,14 @@ export default function Nav() {
   ]
 
   return (
-    <header
-      className={`nav${scrolled ? ' scrolled' : ''}${intro ? ' intro' : ''}${
-        location.pathname === '/' ? ' nav--home' : ''
-      }`}
-    >
+    <header className={`nav${scrolled ? ' scrolled' : ''}${intro ? ' intro' : ''}`}>
       <Link
         to="/"
         className="nav__logo"
         aria-label="返回作品首页"
         onClick={() => {
           // 点击左上角 logo → 重新进入开屏首页动画；同时视为导航交互（激活加粗生效）
-          document.body.classList.add('nav-touched')
+          markTouched()
           window.dispatchEvent(new Event('open-intro'))
         }}
       >
