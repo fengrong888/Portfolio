@@ -151,6 +151,8 @@ dl, dd { margin: 0; }
 .nav__link.active { color: var(--ink); font-weight: 600; }
 /* 进入网站后（未点击过导航）：三个按钮默认都不加粗、色彩一致（未点击态），点击后才激活 */
 body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 550; }
+/* 首屏（首页）界面：导航三个按钮一律不加粗，即使之前点击过、返回首页也保持低调一致 */
+.nav--home .nav__link.active { color: var(--ink-dim); font-weight: 550; }
 
 
 /* 导航按钮进场：遮罩揭幕 + 错峰上移（仅打开网站时播一次） */
