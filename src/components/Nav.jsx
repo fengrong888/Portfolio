@@ -81,11 +81,7 @@ export default function Nav() {
   ]
 
   return (
-    <header
-      className={`nav${scrolled ? ' scrolled' : ''}${intro ? ' intro' : ''}${
-        location.pathname === '/' ? ' nav--home' : ''
-      }`}
-    >
+    <header className={`nav${scrolled ? ' scrolled' : ''}${intro ? ' intro' : ''}`}>
       <Link
         to="/"
         className="nav__logo"
