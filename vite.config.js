@@ -6,18 +6,6 @@ export default defineConfig({
   plugins: [
     react(),
     {
-      // 字体域镜像：构建产物里的 Google Fonts 链接 → miaoda.feishu.cn 镜像
-      // （国内可达）。在源码层完成，GitHub Actions / Cloudflare / 本地任意构建者
-      // 产出的 index.html 都自带正确字体域，无需部署后再人工替换。
-      name: 'font-mirror',
-      transformIndexHtml(html) {
-        return html
-          .replace('https://fonts.googleapis.com/css2', 'https://miaoda.feishu.cn/fonts/css2')
-          .replace(/https:\/\/fonts\.googleapis\.com/g, 'https://miaoda.feishu.cn')
-          .replace(/https:\/\/fonts\.gstatic\.com/g, 'https://miaoda.feishu.cn')
-      },
-    },
-    {
       // 主资源 CDN 化：JS/CSS 走 jsDelivr 国内节点（国内首次加载提速），
       // 加载失败自动回退 GitHub Pages 原站（onerror 双保险），
       // 构建 hash 每次变化 → 新 CDN URL → 无缓存陈旧问题。
