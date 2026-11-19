@@ -611,7 +611,7 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   column-gap: 3.9vw;
   width: 62vw;
   margin-left: var(--about-left);
-  align-items: start;
+  align-items: center;   /* 右侧文字块与左侧照片横向居中对齐 */
 }
 
 /* 左：证件照 —— 缩至截图比例（218:276），与横线左端对齐，完整显示不裁切 */
@@ -639,12 +639,15 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   align-items: flex-start;
 }
 
-/* 整块文字：首行姓名加粗，与正文同族字体；字号较上一版放大一号 */
+/* 整块文字：姓名行与正文统一字号；字号再放大半号、字重各细半号 */
+.about__bio {
+  font-size: clamp(15.5px, 1.23vw, 18px);
+}
 .bio-block { width: 100%; }
 .bio-block__first {
   font-family: var(--font-body);
-  font-weight: 600;
-  font-size: clamp(15px, 1.2vw, 17.5px);
+  font-weight: 500;
+  font-size: inherit;
   line-height: 1.5;
   color: var(--ink);
   letter-spacing: 0.01em;
@@ -652,8 +655,8 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
 }
 .bio-block__line {
   font-family: var(--font-body);
-  font-weight: 400;
-  font-size: clamp(14.5px, 1.16vw, 17px);
+  font-weight: 300;
+  font-size: inherit;
   line-height: 1.55;
   color: var(--ink);
   letter-spacing: 0.01em;
@@ -673,7 +676,7 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   border-radius: 2px;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: clamp(14.5px, 1.16vw, 17px);
+  font-size: inherit;
   line-height: 1.55;
   letter-spacing: 0.01em;
   resize: vertical;
