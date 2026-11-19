@@ -639,14 +639,14 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   align-items: flex-start;
 }
 
-/* 整块文字：姓名行与正文统一字号；字号再放大半号、字重各细半号 */
+/* 整块文字：姓名行与正文统一字号、统一字重（400），仅段落间距区分 */
 .about__bio {
   font-size: clamp(15.5px, 1.23vw, 18px);
 }
 .bio-block { width: 100%; }
 .bio-block__first {
   font-family: var(--font-body);
-  font-weight: 500;
+  font-weight: 400;
   font-size: inherit;
   line-height: 1.5;
   color: var(--ink);
@@ -655,7 +655,7 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
 }
 .bio-block__line {
   font-family: var(--font-body);
-  font-weight: 300;
+  font-weight: 400;
   font-size: inherit;
   line-height: 1.55;
   color: var(--ink);
