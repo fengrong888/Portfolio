@@ -658,8 +658,9 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
 
 /* 数字（年份、日期、区间）视觉补偿：中文字号下西文数字偏小，单独放大一点 */
 .bio-num {
-  font-size: 1.26em;
-  line-height: 0;   /* 放大后不参与行盒高度，保证行距仍是 1.55，与纯中文行一致 */
+  font-size: 1.335em;  /* 300 字重下数字字形高 = 15px（正文中文 16px） */
+  font-weight: 300;    /* 比正文细一档，数字不抢眼 */
+  line-height: 0;      /* 不参与行盒高度，行距仍是 1.55，与纯中文行一致 */
   letter-spacing: 0.015em;
   vertical-align: baseline;
 }
