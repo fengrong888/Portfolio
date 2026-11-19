@@ -644,15 +644,6 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   font-size: clamp(15.5px, 1.23vw, 18px);
 }
 .bio-block { width: 100%; }
-.bio-block__first {
-  font-family: var(--font-body);
-  font-weight: 400;
-  font-size: inherit;
-  line-height: 1.5;
-  color: var(--ink);
-  letter-spacing: 0.01em;
-  margin-bottom: clamp(16px, 1.95vw, 30px);
-}
 .bio-block__line {
   font-family: var(--font-body);
   font-weight: 400;
@@ -665,25 +656,29 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
 .bio-block__first:last-child,
 .bio-block__line:last-child { margin-bottom: 0; }
 
-/* 编辑模式：整块一个文本框，自由更改（每行一段） */
-.bio-block__input {
-  width: 100%;
-  display: block;
-  min-height: 260px;
-  padding: 14px 16px;
-  background: rgba(236, 230, 220, 0.04);
-  border: 1px solid rgba(236, 230, 220, 0.20);
-  border-radius: 2px;
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-size: inherit;
-  line-height: 1.55;
-  letter-spacing: 0.01em;
-  resize: vertical;
-  outline: none;
-  overflow: hidden;
+/* 数字（年份、日期、区间）视觉补偿：中文字号下西文数字偏小，单独放大一点 */
+.bio-num {
+  font-size: 1.26em;
+  line-height: 0;   /* 放大后不参与行盒高度，保证行距仍是 1.55，与纯中文行一致 */
+  letter-spacing: 0.015em;
+  vertical-align: baseline;
 }
-.bio-block__input:focus { border-color: rgba(236, 230, 220, 0.42); }
+
+/* 编辑模式：整块可编辑区域，内部段落与浏览态同一套样式（行距/段距/字号完全一致） */
+.bio-block--edit {
+  outline: 1px dashed rgba(236, 230, 220, 0.24);
+  outline-offset: 8px;
+  border-radius: 2px;
+  cursor: text;
+  caret-color: var(--ink);
+  min-height: 1.55em;
+}
+.bio-block--edit:focus { outline-color: rgba(236, 230, 220, 0.48); }
+.bio-block--edit > p,
+.bio-block--edit > div {
+  margin: 0 0 clamp(16px, 1.8vw, 28px);
+}
+.bio-block--edit > *:last-child { margin-bottom: 0; }
 
 /* 内容底 / 照片底 → 下一个标题（截图 82/960 ≈ 8.5%） */
 .about__clients-title {

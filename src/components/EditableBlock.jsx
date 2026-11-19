@@ -1,62 +1,107 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useEdit, useEditing, applyEdit } from '../lib/edits'
 
+/* 数字串（含日期、年份区间）单独包一层放大，补偿西文数字在中文字号下视觉偏小 */
+const NUM_SRC = '[0-9][0-9.\\-–—:%,/]*'
+
+const escapeHtml = (s) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/* 一行文本 → 带数字 span 的 HTML（编辑态用） */
+function lineToHtml(line) {
+  const re = new RegExp(NUM_SRC, 'g')
+  let out = ''
+  let last = 0
+  let m
+  while ((m = re.exec(line)) !== null) {
+    if (m.index > last) out += escapeHtml(line.slice(last, m.index))
+    out += `<span class="bio-num">${escapeHtml(m[0])}</span>`
+    last = m.index + m[0].length
+  }
+  if (last < line.length) out += escapeHtml(line.slice(last))
+  return out
+}
+
+/* 一行文本 → React 节点（浏览态用） */
+function lineToNodes(line, key) {
+  const re = new RegExp(NUM_SRC, 'g')
+  const out = []
+  let last = 0
+  let m
+  while ((m = re.exec(line)) !== null) {
+    if (m.index > last) out.push(line.slice(last, m.index))
+    out.push(
+      <span className="bio-num" key={`n${key}-${m.index}`}>
+        {m[0]}
+      </span>
+    )
+    last = m.index + m[0].length
+  }
+  if (last < line.length) out.push(line.slice(last))
+  return out
+}
+
+const splitLines = (v) =>
+  String(v)
+    .split('\n')
+    .map((l) => l.replace(/\r/g, ''))
+    .filter((l) => l.trim() !== '')
+
 /* 整块可编辑文本块
-   - 浏览模式：按行渲染段落（首行为姓名行，加粗）
-   - 编辑模式（后台 Shift+E）：整个区域变成一个多行文本框，整段自由输入，
-     每行一段；失焦自动保存，Esc 前可随时改
-   值以单字段存储（行间用 \n 分隔），不再需要逐段单独点改 */
+   - 浏览模式：按行渲染段落（数字部分单独放大）
+   - 编辑模式（后台 Shift+E）：整块变成可编辑区域，内部仍是同样的段落、同一套 CSS，
+     行距 / 段距 / 字号 / 字重与浏览状态完全一致，只是外面多一圈虚线提示；
+     每行一段，失焦自动保存 */
 export default function EditableBlock({ k, fallback }) {
   const value = useEdit(k, fallback)
   const editing = useEditing()
-  const [draft, setDraft] = useState(value)
-  const taRef = useRef(null)
+  const elRef = useRef(null)
 
   useEffect(() => {
-    if (!editing) setDraft(value)
+    const el = elRef.current
+    if (!editing || !el || el.dataset.filled === '1') return
+    el.innerHTML = ''
+    splitLines(value).forEach((line) => {
+      const p = document.createElement('p')
+      p.className = 'bio-block__line'
+      p.innerHTML = lineToHtml(line)
+      el.appendChild(p)
+    })
+    el.dataset.filled = '1'
   }, [editing, value])
 
-  useEffect(() => {
-    const el = taRef.current
-    if (editing && el) {
-      el.style.height = 'auto'
-      el.style.height = `${el.scrollHeight}px`
-    }
-  }, [editing, draft])
-
   if (!editing) {
-    const lines = String(value)
-      .split('\n')
-      .map((l) => l.replace(/\r/g, '').trim())
-      .filter(Boolean)
     return (
       <div className="bio-block">
-        {lines.map((line, i) => (
-          <p key={i} className={i === 0 ? 'bio-block__first' : 'bio-block__line'}>
-            {line}
+        {splitLines(value).map((line, i) => (
+          <p className="bio-block__line" key={i}>
+            {lineToNodes(line, i)}
           </p>
         ))}
       </div>
     )
   }
 
+  const commit = () => {
+    const el = elRef.current
+    if (!el) return
+    const t = el.innerText
+      .replace(/\r/g, '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join('\n')
+    if (t && t !== value) applyEdit(k, t)
+  }
+
   return (
-    <textarea
-      ref={taRef}
-      className="bio-block__input"
-      value={draft}
+    <div
+      ref={elRef}
+      className="bio-block bio-block--edit"
+      contentEditable
+      suppressContentEditableWarning
       spellCheck={false}
-      onChange={(e) => {
-        setDraft(e.target.value)
-        const el = e.target
-        el.style.height = 'auto'
-        el.style.height = `${el.scrollHeight}px`
-      }}
-      onBlur={() => {
-        const t = draft.replace(/\r/g, '').trim()
-        if (t && t !== value) applyEdit(k, t)
-      }}
-      placeholder="每行一段，自由编辑"
+      onBlur={commit}
     />
   )
 }
