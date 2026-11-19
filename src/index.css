@@ -639,26 +639,48 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
   align-items: flex-start;
 }
 
-.about__bio-name {
+/* 整块文字：首行姓名加粗，与正文同族字体；字号较上一版放大一号 */
+.bio-block { width: 100%; }
+.bio-block__first {
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: clamp(14px, 1.08vw, 16px);
+  font-size: clamp(15px, 1.2vw, 17.5px);
   line-height: 1.5;
   color: var(--ink);
   letter-spacing: 0.01em;
-  margin-bottom: clamp(16px, 1.95vw, 28px);
+  margin-bottom: clamp(16px, 1.95vw, 30px);
 }
-
-.about__bio-text {
+.bio-block__line {
   font-family: var(--font-body);
   font-weight: 400;
-  font-size: clamp(13.5px, 1.05vw, 15.5px);
+  font-size: clamp(14.5px, 1.16vw, 17px);
   line-height: 1.55;
   color: var(--ink);
   letter-spacing: 0.01em;
-  margin-bottom: clamp(16px, 1.8vw, 26px);
+  margin-bottom: clamp(16px, 1.8vw, 28px);
 }
-.about__bio-text:last-child { margin-bottom: 0; }
+.bio-block__first:last-child,
+.bio-block__line:last-child { margin-bottom: 0; }
+
+/* 编辑模式：整块一个文本框，自由更改（每行一段） */
+.bio-block__input {
+  width: 100%;
+  display: block;
+  min-height: 260px;
+  padding: 14px 16px;
+  background: rgba(236, 230, 220, 0.04);
+  border: 1px solid rgba(236, 230, 220, 0.20);
+  border-radius: 2px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: clamp(14.5px, 1.16vw, 17px);
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  resize: vertical;
+  outline: none;
+  overflow: hidden;
+}
+.bio-block__input:focus { border-color: rgba(236, 230, 220, 0.42); }
 
 /* 内容底 / 照片底 → 下一个标题（截图 82/960 ≈ 8.5%） */
 .about__clients-title {
