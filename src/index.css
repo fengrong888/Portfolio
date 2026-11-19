@@ -656,12 +656,14 @@ body:not(.nav-touched) .nav__link.active { color: var(--ink-dim); font-weight: 5
 .bio-block__first:last-child,
 .bio-block__line:last-child { margin-bottom: 0; }
 
-/* 数字（年份、日期、区间）视觉补偿：中文字号下西文数字偏小，单独放大一点 */
+/* 数字（年份、日期、区间）单独用阿里妈妈方圆体，字号较上一版收两号 */
 .bio-num {
-  font-size: 1.335em;  /* 300 字重下数字字形高 = 15px（正文中文 16px） */
-  font-weight: 300;    /* 比正文细一档，数字不抢眼 */
+  font-family: 'AlimamaFangYuanTiVF', var(--font-body);
+  font-size: 0.93em;   /* 方圆体数字字形高 13px（上一版 15px，收两号；中文 16px） */
+  font-weight: 300;
+  font-variation-settings: 'wght' 300, 'BEVL' 0;
   line-height: 0;      /* 不参与行盒高度，行距仍是 1.55，与纯中文行一致 */
-  letter-spacing: 0.015em;
+  letter-spacing: 0.01em;
   vertical-align: baseline;
 }
 
