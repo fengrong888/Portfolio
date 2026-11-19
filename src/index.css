@@ -1101,12 +1101,9 @@ textarea {
   }
   .detail__gallery { padding-top: 14px; }
 
-  /* 关于我：横线 / 标题 / LOGO 墙加宽至 90% */
-  .about__rule-top, .about__rule-bottom { width: 90vw; margin-inline: 5vw; }
-  .about__intro-label, .about__clients-title { margin-left: 5vw; }
-  .about__clients-wall { width: 90vw; margin-inline: 5vw; }
+  /* 关于我：横线 / 标题 / LOGO 墙的 90vw 规则已在 max-width:900px 段统一处理 */
   /* 证件照左右两端与上方横线（90vw、5vw 起）完全对齐 */
-  .about__profile { grid-template-columns: 34vw minmax(0, 1fr); gap: 5vw; margin-left: 5vw; width: 90vw; }
+  /* 手机端改为单列堆叠，规则见 max-width: 900px 段 */
 
   /* 联系页内容居中展示 */
   .contact__inner { display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -1772,6 +1769,26 @@ textarea {
   opacity: 0;
   animation: heroTitleIn 1.25s cubic-bezier(0.16, 1, 0.3, 1) 0.12s forwards;
 }
+/* 手机 / 竖屏平板：关于我改为「照片在上、文字在下」单列堆叠
+   并排时文字列只有约 200px，17 号字会挤得难以阅读；堆叠后文字占满 90vw */
+@media (max-width: 900px) {
+  /* 小标题 / 横线 / LOGO 墙与照片、文字统一为 90vw、左右各留 5vw，左缘右缘全部对齐 */
+  .about__sec-label { width: 90vw; margin-left: 5vw; }
+  .about__rule-top,
+  .about__rule-bottom { width: 90vw; margin-inline: 5vw; }
+  .about__clients-wall { width: 90vw; margin-inline: 5vw; }
+
+  .about__profile {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    width: 90vw;
+    margin-left: 5vw;
+    align-items: start;   /* 堆叠后不需要纵向居中 */
+  }
+  .about__portrait { width: min(44vw, 190px); }
+  .about__bio { margin-top: clamp(20px, 4vw, 32px); width: 100%; }
+}
+
 @media (max-width: 640px) {
   .hero-intro__title {
     right: auto;
