@@ -4,6 +4,9 @@ import { useEdit, useEditing, applyEdit } from '../lib/edits'
 /* 数字串（含日期、年份区间）单独包一层放大，补偿西文数字在中文字号下视觉偏小 */
 const NUM_SRC = '[0-9][0-9.\\-–—:%,/]*'
 
+/* 方圆体子集只含 ASCII，缺 en dash / em dash，显示时归一成半角连字符，避免该字符回退成别的字体 */
+const normalizeNum = (t) => t.replace(/[–—]/g, '-')
+
 const escapeHtml = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -15,7 +18,7 @@ function lineToHtml(line) {
   let m
   while ((m = re.exec(line)) !== null) {
     if (m.index > last) out += escapeHtml(line.slice(last, m.index))
-    out += `<span class="bio-num">${escapeHtml(m[0])}</span>`
+    out += `<span class="bio-num">${escapeHtml(normalizeNum(m[0]))}</span>`
     last = m.index + m[0].length
   }
   if (last < line.length) out += escapeHtml(line.slice(last))
@@ -32,7 +35,7 @@ function lineToNodes(line, key) {
     if (m.index > last) out.push(line.slice(last, m.index))
     out.push(
       <span className="bio-num" key={`n${key}-${m.index}`}>
-        {m[0]}
+        {normalizeNum(m[0])}
       </span>
     )
     last = m.index + m[0].length
